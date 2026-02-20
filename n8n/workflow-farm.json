@@ -1,0 +1,83 @@
+{
+    "name": "SMP - Smart Farm Monitor",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "farm",
+                "responseMode": "onReceived",
+                "options": {}
+            },
+            "id": "5a5a5a5a-0005-0005-0005-000000000001",
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const input = $input.first().json.body || $input.first().json;\nconst m = input.metrics;\nlet status = 'normal';\nlet message = 'Farm conditions optimal.';\n\nif (m.soil_moisture < 20 || m.ph > 9 || m.ph < 4.5) {\n  status = 'critical';\n  message = '🌾 CRITICAL: Soil conditions dangerous! Moisture=' + m.soil_moisture + '%, pH=' + m.ph;\n} else if (m.soil_moisture < 30 || m.ph > 8 || m.light_intensity > 1000) {\n  status = 'warning';\n  message = '⚠️ Warning: Soil needs attention. Moisture=' + m.soil_moisture + '%';\n}\n\nreturn [{\n  json: {\n    deviceId: input.deviceId || 'dev_farm_01',\n    domain: 'farm',\n    metrics: m,\n    status: status,\n    message: message,\n    timestamp: Date.now()\n  }\n}];"
+            },
+            "id": "5a5a5a5a-0005-0005-0005-000000000002",
+            "name": "Evaluate Farm",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                500,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "http://host.docker.internal:3000/api/ingest",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify($json) }}",
+                "options": {}
+            },
+            "id": "5a5a5a5a-0005-0005-0005-000000000003",
+            "name": "POST to Core",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                760,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Evaluate Farm",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Evaluate Farm": {
+            "main": [
+                [
+                    {
+                        "node": "POST to Core",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "pinData": {},
+    "meta": {
+        "instanceId": "smp-spla-demo"
+    }
+}

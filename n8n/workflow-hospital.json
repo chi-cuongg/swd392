@@ -1,5 +1,5 @@
 {
-    "name": "Hospital Patient Monitoring",
+    "name": "SMP - Hospital Patient Monitoring",
     "nodes": [
         {
             "parameters": {
@@ -8,9 +8,10 @@
                 "responseMode": "onReceived",
                 "options": {}
             },
-            "id": "webhook-hospital",
-            "name": "Webhook - Hospital",
+            "id": "2a2a2a2a-0002-0002-0002-000000000001",
+            "name": "Webhook",
             "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
             "position": [
                 250,
                 300
@@ -18,115 +19,65 @@
         },
         {
             "parameters": {
-                "conditions": {
-                    "number": [
-                        {
-                            "value1": "={{ $json.metrics.heart_rate }}",
-                            "operation": "larger",
-                            "value2": 120
-                        }
-                    ]
-                }
+                "jsCode": "const input = $input.first().json.body || $input.first().json;\nconst m = input.metrics;\nlet status = 'normal';\nlet message = 'Patient vitals stable.';\n\nif (m.heart_rate > 150 || m.spo2 < 90) {\n  status = 'critical';\n  message = '🚨 CRITICAL: HR=' + m.heart_rate + 'bpm, SpO2=' + m.spo2 + '%';\n} else if (m.heart_rate > 120 || m.spo2 < 95 || m.blood_pressure > 140) {\n  status = 'warning';\n  message = '⚠️ Warning: Vitals need attention. HR=' + m.heart_rate + ', SpO2=' + m.spo2;\n}\n\nreturn [{\n  json: {\n    deviceId: input.deviceId || 'dev_hosp_01',\n    domain: 'hospital',\n    metrics: m,\n    status: status,\n    message: message,\n    timestamp: Date.now()\n  }\n}];"
             },
-            "id": "if-hr-high",
-            "name": "IF Heart Rate > 120",
-            "type": "n8n-nodes-base.if",
+            "id": "2a2a2a2a-0002-0002-0002-000000000002",
+            "name": "Evaluate Vitals",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
             "position": [
-                480,
+                500,
                 300
             ]
         },
         {
             "parameters": {
-                "functionCode": "const input = $input.item.json;\nconst hr = input.metrics.heart_rate;\nconst spo2 = input.metrics.spo2;\nlet status = 'warning';\nlet msg = '⚠️ High heart rate: ' + hr + ' bpm';\nif (hr > 150 || spo2 < 90) {\n  status = 'critical';\n  msg = '🚨 CRITICAL: HR=' + hr + ', SpO2=' + spo2 + '%';\n}\nreturn { json: { deviceId: input.deviceId || 'dev_hosp_01', domain: 'hospital', metrics: input.metrics, status, message: msg, timestamp: Date.now() } };"
-            },
-            "id": "evaluate-critical",
-            "name": "Evaluate Severity",
-            "type": "n8n-nodes-base.code",
-            "position": [
-                700,
-                200
-            ]
-        },
-        {
-            "parameters": {
-                "functionCode": "const input = $input.item.json;\nreturn { json: { deviceId: input.deviceId || 'dev_hosp_01', domain: 'hospital', metrics: input.metrics, status: 'normal', message: 'Patient vitals stable', timestamp: Date.now() } };"
-            },
-            "id": "set-normal",
-            "name": "Set Normal",
-            "type": "n8n-nodes-base.code",
-            "position": [
-                700,
-                400
-            ]
-        },
-        {
-            "parameters": {
-                "url": "http://host.docker.internal:3000/api/ingest",
                 "method": "POST",
+                "url": "http://host.docker.internal:3000/api/ingest",
                 "sendBody": true,
-                "jsonBody": "={{ JSON.stringify($json) }}"
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify($json) }}",
+                "options": {}
             },
-            "id": "http-to-core",
-            "name": "POST to Core Platform",
+            "id": "2a2a2a2a-0002-0002-0002-000000000003",
+            "name": "POST to Core",
             "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
             "position": [
-                950,
+                760,
                 300
             ]
         }
     ],
     "connections": {
-        "Webhook - Hospital": {
+        "Webhook": {
             "main": [
                 [
                     {
-                        "node": "IF Heart Rate > 120",
+                        "node": "Evaluate Vitals",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "IF Heart Rate > 120": {
+        "Evaluate Vitals": {
             "main": [
                 [
                     {
-                        "node": "Evaluate Severity",
-                        "type": "main",
-                        "index": 0
-                    }
-                ],
-                [
-                    {
-                        "node": "Set Normal",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Evaluate Severity": {
-            "main": [
-                [
-                    {
-                        "node": "POST to Core Platform",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Set Normal": {
-            "main": [
-                [
-                    {
-                        "node": "POST to Core Platform",
+                        "node": "POST to Core",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "pinData": {},
+    "meta": {
+        "instanceId": "smp-spla-demo"
     }
 }

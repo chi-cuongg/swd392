@@ -1,5 +1,5 @@
 {
-    "name": "Smart Home Fire Detection",
+    "name": "SMP - Smart Home Fire Detection",
     "nodes": [
         {
             "parameters": {
@@ -8,9 +8,10 @@
                 "responseMode": "onReceived",
                 "options": {}
             },
-            "id": "webhook-home",
-            "name": "Webhook - Smart Home",
+            "id": "1a1a1a1a-0001-0001-0001-000000000001",
+            "name": "Webhook",
             "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
             "position": [
                 250,
                 300
@@ -19,18 +20,29 @@
         {
             "parameters": {
                 "conditions": {
-                    "number": [
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
                         {
-                            "value1": "={{ $json.metrics.temp }}",
-                            "operation": "larger",
-                            "value2": 50
+                            "id": "cond1",
+                            "leftValue": "={{ $json.body.metrics.temp }}",
+                            "rightValue": 50,
+                            "operator": {
+                                "type": "number",
+                                "operation": "gt"
+                            }
                         }
-                    ]
+                    ],
+                    "combinator": "or"
                 }
             },
-            "id": "if-fire",
-            "name": "IF Temperature > 50",
+            "id": "1a1a1a1a-0001-0001-0001-000000000002",
+            "name": "IF Temp > 50",
             "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
             "position": [
                 480,
                 300
@@ -38,11 +50,12 @@
         },
         {
             "parameters": {
-                "functionCode": "const input = $input.item.json;\nconst payload = {\n  deviceId: input.deviceId || 'dev_home_01',\n  domain: 'home',\n  metrics: input.metrics,\n  status: 'critical',\n  message: '🔥 FIRE ALERT! Temperature: ' + input.metrics.temp + '°C',\n  timestamp: Date.now()\n};\nreturn { json: payload };"
+                "jsCode": "const input = $input.first().json.body || $input.first().json;\nconst metrics = input.metrics;\nlet status = 'critical';\nlet message = '🔥 FIRE ALERT! Temperature: ' + metrics.temp + '°C';\nif (metrics.smoke > 60) {\n  message += ' | Smoke: ' + metrics.smoke + '%';\n}\nreturn [{\n  json: {\n    deviceId: input.deviceId || 'dev_home_01',\n    domain: 'home',\n    metrics: metrics,\n    status: status,\n    message: message,\n    timestamp: Date.now()\n  }\n}];"
             },
-            "id": "set-critical",
-            "name": "Set Critical Payload",
+            "id": "1a1a1a1a-0001-0001-0001-000000000003",
+            "name": "Set Critical",
             "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
             "position": [
                 700,
                 200
@@ -50,88 +63,94 @@
         },
         {
             "parameters": {
-                "functionCode": "const input = $input.item.json;\nconst payload = {\n  deviceId: input.deviceId || 'dev_home_01',\n  domain: 'home',\n  metrics: input.metrics,\n  status: 'normal',\n  message: 'All clear',\n  timestamp: Date.now()\n};\nreturn { json: payload };"
+                "jsCode": "const input = $input.first().json.body || $input.first().json;\nconst metrics = input.metrics;\nlet status = 'normal';\nlet message = 'All systems normal.';\nif (metrics.temp > 40 || metrics.smoke > 30) {\n  status = 'warning';\n  message = '⚠️ Elevated temperature or smoke levels.';\n}\nreturn [{\n  json: {\n    deviceId: input.deviceId || 'dev_home_01',\n    domain: 'home',\n    metrics: metrics,\n    status: status,\n    message: message,\n    timestamp: Date.now()\n  }\n}];"
             },
-            "id": "set-normal",
-            "name": "Set Normal Payload",
+            "id": "1a1a1a1a-0001-0001-0001-000000000004",
+            "name": "Set Normal/Warning",
             "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
             "position": [
                 700,
-                400
+                420
             ]
         },
         {
             "parameters": {
+                "method": "POST",
                 "url": "http://host.docker.internal:3000/api/ingest",
                 "sendBody": true,
-                "bodyParameters": {
-                    "parameters": []
-                },
-                "options": {},
-                "sendHeaders": false,
-                "method": "POST",
-                "jsonBody": "={{ JSON.stringify($json) }}"
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify($json) }}",
+                "options": {}
             },
-            "id": "http-to-core",
-            "name": "POST to Core Platform",
+            "id": "1a1a1a1a-0001-0001-0001-000000000005",
+            "name": "POST to Core",
             "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
             "position": [
-                950,
+                940,
                 300
             ]
         }
     ],
     "connections": {
-        "Webhook - Smart Home": {
+        "Webhook": {
             "main": [
                 [
                     {
-                        "node": "IF Temperature > 50",
+                        "node": "IF Temp > 50",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "IF Temperature > 50": {
+        "IF Temp > 50": {
             "main": [
                 [
                     {
-                        "node": "Set Critical Payload",
+                        "node": "Set Critical",
                         "type": "main",
                         "index": 0
                     }
                 ],
                 [
                     {
-                        "node": "Set Normal Payload",
+                        "node": "Set Normal/Warning",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "Set Critical Payload": {
+        "Set Critical": {
             "main": [
                 [
                     {
-                        "node": "POST to Core Platform",
+                        "node": "POST to Core",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "Set Normal Payload": {
+        "Set Normal/Warning": {
             "main": [
                 [
                     {
-                        "node": "POST to Core Platform",
+                        "node": "POST to Core",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "pinData": {},
+    "meta": {
+        "instanceId": "smp-spla-demo"
     }
 }

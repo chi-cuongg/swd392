@@ -1,0 +1,83 @@
+{
+    "name": "SMP - Factory Machine Monitor",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "factory",
+                "responseMode": "onReceived",
+                "options": {}
+            },
+            "id": "3a3a3a3a-0003-0003-0003-000000000001",
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                250,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const input = $input.first().json.body || $input.first().json;\nconst m = input.metrics;\nlet status = 'normal';\nlet message = 'All machines operating normally.';\n\nif (m.machine_temp > 90 || m.vibration > 80) {\n  status = 'critical';\n  message = '🏭 CRITICAL: Machine malfunction! Temp=' + m.machine_temp + '°C, Vibration=' + m.vibration + 'Hz';\n} else if (m.machine_temp > 70 || m.vibration > 50 || m.pressure > 25) {\n  status = 'warning';\n  message = '⚠️ Warning: Machine operating outside norms.';\n}\n\nreturn [{\n  json: {\n    deviceId: input.deviceId || 'dev_fact_01',\n    domain: 'factory',\n    metrics: m,\n    status: status,\n    message: message,\n    timestamp: Date.now()\n  }\n}];"
+            },
+            "id": "3a3a3a3a-0003-0003-0003-000000000002",
+            "name": "Evaluate Machine",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                500,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "http://host.docker.internal:3000/api/ingest",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify($json) }}",
+                "options": {}
+            },
+            "id": "3a3a3a3a-0003-0003-0003-000000000003",
+            "name": "POST to Core",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                760,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Evaluate Machine",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Evaluate Machine": {
+            "main": [
+                [
+                    {
+                        "node": "POST to Core",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "pinData": {},
+    "meta": {
+        "instanceId": "smp-spla-demo"
+    }
+}
