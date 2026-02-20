@@ -1,0 +1,132 @@
+{
+    "name": "Hospital Patient Monitoring",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "hospital",
+                "responseMode": "onReceived",
+                "options": {}
+            },
+            "id": "webhook-hospital",
+            "name": "Webhook - Hospital",
+            "type": "n8n-nodes-base.webhook",
+            "position": [
+                250,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "number": [
+                        {
+                            "value1": "={{ $json.metrics.heart_rate }}",
+                            "operation": "larger",
+                            "value2": 120
+                        }
+                    ]
+                }
+            },
+            "id": "if-hr-high",
+            "name": "IF Heart Rate > 120",
+            "type": "n8n-nodes-base.if",
+            "position": [
+                480,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "const input = $input.item.json;\nconst hr = input.metrics.heart_rate;\nconst spo2 = input.metrics.spo2;\nlet status = 'warning';\nlet msg = '⚠️ High heart rate: ' + hr + ' bpm';\nif (hr > 150 || spo2 < 90) {\n  status = 'critical';\n  msg = '🚨 CRITICAL: HR=' + hr + ', SpO2=' + spo2 + '%';\n}\nreturn { json: { deviceId: input.deviceId || 'dev_hosp_01', domain: 'hospital', metrics: input.metrics, status, message: msg, timestamp: Date.now() } };"
+            },
+            "id": "evaluate-critical",
+            "name": "Evaluate Severity",
+            "type": "n8n-nodes-base.code",
+            "position": [
+                700,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "const input = $input.item.json;\nreturn { json: { deviceId: input.deviceId || 'dev_hosp_01', domain: 'hospital', metrics: input.metrics, status: 'normal', message: 'Patient vitals stable', timestamp: Date.now() } };"
+            },
+            "id": "set-normal",
+            "name": "Set Normal",
+            "type": "n8n-nodes-base.code",
+            "position": [
+                700,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "url": "http://host.docker.internal:3000/api/ingest",
+                "method": "POST",
+                "sendBody": true,
+                "jsonBody": "={{ JSON.stringify($json) }}"
+            },
+            "id": "http-to-core",
+            "name": "POST to Core Platform",
+            "type": "n8n-nodes-base.httpRequest",
+            "position": [
+                950,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook - Hospital": {
+            "main": [
+                [
+                    {
+                        "node": "IF Heart Rate > 120",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF Heart Rate > 120": {
+            "main": [
+                [
+                    {
+                        "node": "Evaluate Severity",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Set Normal",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Evaluate Severity": {
+            "main": [
+                [
+                    {
+                        "node": "POST to Core Platform",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Set Normal": {
+            "main": [
+                [
+                    {
+                        "node": "POST to Core Platform",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

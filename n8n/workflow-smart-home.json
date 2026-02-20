@@ -1,0 +1,137 @@
+{
+    "name": "Smart Home Fire Detection",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "smart-home",
+                "responseMode": "onReceived",
+                "options": {}
+            },
+            "id": "webhook-home",
+            "name": "Webhook - Smart Home",
+            "type": "n8n-nodes-base.webhook",
+            "position": [
+                250,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "number": [
+                        {
+                            "value1": "={{ $json.metrics.temp }}",
+                            "operation": "larger",
+                            "value2": 50
+                        }
+                    ]
+                }
+            },
+            "id": "if-fire",
+            "name": "IF Temperature > 50",
+            "type": "n8n-nodes-base.if",
+            "position": [
+                480,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "const input = $input.item.json;\nconst payload = {\n  deviceId: input.deviceId || 'dev_home_01',\n  domain: 'home',\n  metrics: input.metrics,\n  status: 'critical',\n  message: '🔥 FIRE ALERT! Temperature: ' + input.metrics.temp + '°C',\n  timestamp: Date.now()\n};\nreturn { json: payload };"
+            },
+            "id": "set-critical",
+            "name": "Set Critical Payload",
+            "type": "n8n-nodes-base.code",
+            "position": [
+                700,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "functionCode": "const input = $input.item.json;\nconst payload = {\n  deviceId: input.deviceId || 'dev_home_01',\n  domain: 'home',\n  metrics: input.metrics,\n  status: 'normal',\n  message: 'All clear',\n  timestamp: Date.now()\n};\nreturn { json: payload };"
+            },
+            "id": "set-normal",
+            "name": "Set Normal Payload",
+            "type": "n8n-nodes-base.code",
+            "position": [
+                700,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "url": "http://host.docker.internal:3000/api/ingest",
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": []
+                },
+                "options": {},
+                "sendHeaders": false,
+                "method": "POST",
+                "jsonBody": "={{ JSON.stringify($json) }}"
+            },
+            "id": "http-to-core",
+            "name": "POST to Core Platform",
+            "type": "n8n-nodes-base.httpRequest",
+            "position": [
+                950,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook - Smart Home": {
+            "main": [
+                [
+                    {
+                        "node": "IF Temperature > 50",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF Temperature > 50": {
+            "main": [
+                [
+                    {
+                        "node": "Set Critical Payload",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Set Normal Payload",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Set Critical Payload": {
+            "main": [
+                [
+                    {
+                        "node": "POST to Core Platform",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Set Normal Payload": {
+            "main": [
+                [
+                    {
+                        "node": "POST to Core Platform",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

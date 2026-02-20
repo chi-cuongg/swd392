@@ -1,0 +1,38 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String @id @default(uuid())
+  email    String @unique
+  password String
+  name     String?
+  role     String @default("user")
+}
+
+model Device {
+  id        String   @id @default(uuid())
+  name      String
+  type      String   // e.g., "ESP8266", "Simulator"
+  variant   String   // e.g., "home", "hospital"
+  status    String   @default("offline")
+  config    String?  // JSON string for specific config
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  logs      Log[]
+}
+
+model Log {
+  id        Int      @id @default(autoincrement())
+  deviceId  String
+  device    Device   @relation(fields: [deviceId], references: [id])
+  data      String   // JSON string of the payload
+  level     String   @default("info") // info, warning, critical
+  message   String?
+  timestamp DateTime @default(now())
+}
