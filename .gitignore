@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Database
+backend/dev.db
+backend/dev.db-journal
+backend/prisma/*.db
+backend/prisma/*.db-journal
+
+# n8n data (Docker volume)
+n8n/n8n_data/
+
+# Build output
+frontend/dist/
+backend/dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+
+# Package lock (optional, keep if needed)
+# package-lock.json
