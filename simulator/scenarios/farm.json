@@ -1,7 +1,7 @@
 [
-  { "label": "baseline", "metrics": { "soil_moisture": 44.0, "light_intensity": 680, "ph": 6.8 } },
-  { "label": "warning_dry_soil", "metrics": { "soil_moisture": 28.0, "light_intensity": 810, "ph": 7.8 } },
-  { "label": "critical_soil_risk", "metrics": { "soil_moisture": 14.0, "light_intensity": 920, "ph": 9.3 } },
-  { "label": "irrigation", "metrics": { "soil_moisture": 33.0, "light_intensity": 700, "ph": 7.4 } },
-  { "label": "recovered", "metrics": { "soil_moisture": 46.0, "light_intensity": 650, "ph": 6.9 } }
+    { "label": "baseline", "metrics": { "soil_moisture": 44.0, "light_intensity": 680, "ph": 6.8 } },
+    { "label": "warning_dry_soil", "metrics": { "soil_moisture": 28.0, "light_intensity": 810, "ph": 7.8 } },
+    { "label": "critical_soil_risk", "metrics": { "soil_moisture": 14.0, "light_intensity": 920, "ph": 9.3 } },
+    { "label": "irrigation", "metrics": { "soil_moisture": 33.0, "light_intensity": 700, "ph": 7.4 } },
+    { "label": "recovered", "metrics": { "soil_moisture": 46.0, "light_intensity": 650, "ph": 6.9 } }
 ]

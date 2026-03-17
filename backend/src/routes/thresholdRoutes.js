@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../utils/prisma');
 
-router.get('/', async (req, res) => {
+router.get('/', async(req, res) => {
     try {
         const { organizationId, domain } = req.query;
         const where = {};
@@ -22,15 +22,15 @@ router.get('/', async (req, res) => {
             key: metric.key,
             label: metric.label,
             unit: metric.unit,
-            threshold: metric.threshold
-                ? {
+            threshold: metric.threshold ?
+                {
                     id: metric.threshold.id,
                     warn: metric.threshold.warn,
                     critical: metric.threshold.critical,
                     invertWarning: metric.threshold.invertWarning,
                     valueMapping: metric.threshold.valueMapping ? JSON.parse(metric.threshold.valueMapping) : null
-                }
-                : null
+                } :
+                null
         })));
     } catch (error) {
         console.error('Failed to fetch thresholds:', error);
@@ -38,7 +38,7 @@ router.get('/', async (req, res) => {
     }
 });
 
-router.put('/:metricId', async (req, res) => {
+router.put('/:metricId', async(req, res) => {
     try {
         const { metricId } = req.params;
         const { warn, critical, invertWarning = false, valueMapping } = req.body;

@@ -4,16 +4,16 @@ const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
-exports.register = async (req, res) => {
+exports.register = async(req, res) => {
     try {
         const { organizationId, organizationSlug, email, password, name } = req.body;
         if ((!organizationId && !organizationSlug) || !email || !password) {
             return res.status(400).json({ error: 'Organization, email and password are required' });
         }
 
-        const organization = organizationId
-            ? await prisma.organization.findUnique({ where: { id: organizationId } })
-            : await prisma.organization.findUnique({ where: { slug: organizationSlug } });
+        const organization = organizationId ?
+            await prisma.organization.findUnique({ where: { id: organizationId } }) :
+            await prisma.organization.findUnique({ where: { slug: organizationSlug } });
 
         if (!organization) {
             return res.status(404).json({ error: 'Organization not found' });
@@ -53,16 +53,16 @@ exports.register = async (req, res) => {
     }
 };
 
-exports.login = async (req, res) => {
+exports.login = async(req, res) => {
     try {
         const { organizationId, organizationSlug, email, password } = req.body;
         if ((!organizationId && !organizationSlug) || !email || !password) {
             return res.status(400).json({ error: 'Organization, email and password are required' });
         }
 
-        const organization = organizationId
-            ? await prisma.organization.findUnique({ where: { id: organizationId } })
-            : await prisma.organization.findUnique({ where: { slug: organizationSlug } });
+        const organization = organizationId ?
+            await prisma.organization.findUnique({ where: { id: organizationId } }) :
+            await prisma.organization.findUnique({ where: { slug: organizationSlug } });
 
         if (!organization) {
             return res.status(404).json({ error: 'Organization not found' });
@@ -95,7 +95,7 @@ exports.login = async (req, res) => {
     }
 };
 
-exports.me = async (req, res) => {
+exports.me = async(req, res) => {
     try {
         const user = await prisma.user.findUnique({
             where: { id: req.userId },

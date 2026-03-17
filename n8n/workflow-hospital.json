@@ -1,7 +1,6 @@
 {
     "name": "SMP - Hospital Ingest Router",
-    "nodes": [
-        {
+    "nodes": [{
             "parameters": {
                 "httpMethod": "POST",
                 "path": "hospital",
@@ -52,24 +51,20 @@
     "connections": {
         "Webhook": {
             "main": [
-                [
-                    {
-                        "node": "Normalize Payload",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
+                [{
+                    "node": "Normalize Payload",
+                    "type": "main",
+                    "index": 0
+                }]
             ]
         },
         "Normalize Payload": {
             "main": [
-                [
-                    {
-                        "node": "POST to Core",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
+                [{
+                    "node": "POST to Core",
+                    "type": "main",
+                    "index": 0
+                }]
             ]
         }
     },

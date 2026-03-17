@@ -1,410 +1,475 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Simulator Control Panel</title>
-  <style>
-    :root {
-      --bg: #0b1222;
-      --card: #101a33;
-      --line: #25355f;
-      --text: #d7e2ff;
-      --muted: #95a8d8;
-      --ok: #32d583;
-      --warn: #ffb020;
-      --bad: #ff5d5d;
-      --accent: #44a3ff;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background: radial-gradient(circle at top right, #193260 0%, var(--bg) 55%);
-      color: var(--text);
-      min-height: 100vh;
-    }
-    .wrap {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 20px;
-      display: grid;
-      gap: 16px;
-      grid-template-columns: 1fr;
-    }
-    .card {
-      background: linear-gradient(180deg, #122041, var(--card));
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      padding: 16px;
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
-    }
-    h1 {
-      margin: 0 0 8px;
-      font-size: 28px;
-      letter-spacing: 0.5px;
-    }
-    .sub { color: var(--muted); margin: 0; }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 10px;
-      margin-top: 12px;
-    }
-    label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
-    select, input, textarea, button {
-      width: 100%;
-      border-radius: 10px;
-      border: 1px solid var(--line);
-      background: #0f1a33;
-      color: var(--text);
-      padding: 10px;
-      font-size: 14px;
-    }
-    textarea {
-      min-height: 120px;
-      resize: vertical;
-      font-family: Consolas, "Courier New", monospace;
-    }
-    .btns {
-      display: grid;
-      gap: 10px;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      margin-top: 12px;
-    }
-    button {
-      cursor: pointer;
-      transition: transform 120ms ease, border-color 120ms ease;
-      font-weight: 600;
-    }
-    button:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-      transform: none;
-      border-color: var(--line);
-    }
-    button:hover {
-      transform: translateY(-1px);
-      border-color: var(--accent);
-    }
-    .btn-primary {
-      border-color: rgba(68, 163, 255, 0.6);
-      background: linear-gradient(180deg, rgba(68, 163, 255, 0.25), rgba(68, 163, 255, 0.1));
-    }
-    .btn-active {
-      border-color: rgba(50, 213, 131, 0.8);
-      background: linear-gradient(180deg, rgba(50, 213, 131, 0.26), rgba(50, 213, 131, 0.1));
-      color: #ddffe9;
-    }
-    .btn-stop {
-      border-color: rgba(255, 93, 93, 0.8);
-      background: linear-gradient(180deg, rgba(255, 93, 93, 0.2), rgba(255, 93, 93, 0.08));
-      color: #ffdede;
-    }
-    .btn-muted {
-      border-color: rgba(255, 176, 32, 0.6);
-      background: linear-gradient(180deg, rgba(255, 176, 32, 0.2), rgba(255, 176, 32, 0.08));
-      color: #ffe5b4;
-    }
-    .pill {
-      display: inline-flex;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      font-size: 12px;
-      margin-right: 8px;
-      color: var(--muted);
-    }
-    .running { color: var(--ok); border-color: rgba(50, 213, 131, 0.4); }
-    .stopped { color: var(--warn); border-color: rgba(255, 176, 32, 0.4); }
-    .logbox {
-      min-height: 260px;
-      max-height: 420px;
-      overflow: auto;
-      background: #081027;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 10px;
-      font-family: Consolas, "Courier New", monospace;
-      font-size: 13px;
-    }
-    .line { margin: 0 0 8px; color: #bdd1ff; }
-    .line.warn { color: #ffd18a; }
-    .line.error { color: #ff9696; }
-    .hint { color: var(--muted); font-size: 13px; margin-top: 8px; }
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <section class="card">
-      <h1>Simulator Control Panel</h1>
-      <p class="sub">Manual control for deterministic demo flow: send, autoplay, next step, and reset scenario.</p>
-      <div style="margin-top: 12px;">
-        <span id="runState" class="pill stopped">stopped</span>
-        <span id="previewState" class="pill">preview: -</span>
-      </div>
-    </section>
 
-    <section class="card">
-      <div class="grid">
-        <div>
-          <label for="variant">Variant</label>
-          <select id="variant"></select>
-        </div>
-        <div>
-          <label for="routeMode">Route mode</label>
-          <select id="routeMode">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simulator Control Panel</title>
+    <style>
+         :root {
+            --bg: #0b1222;
+            --card: #101a33;
+            --line: #25355f;
+            --text: #d7e2ff;
+            --muted: #95a8d8;
+            --ok: #32d583;
+            --warn: #ffb020;
+            --bad: #ff5d5d;
+            --accent: #44a3ff;
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(circle at top right, #193260 0%, var(--bg) 55%);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        
+        .wrap {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            gap: 16px;
+            grid-template-columns: 1fr;
+        }
+        
+        .card {
+            background: linear-gradient(180deg, #122041, var(--card));
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 16px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+        }
+        
+        h1 {
+            margin: 0 0 8px;
+            font-size: 28px;
+            letter-spacing: 0.5px;
+        }
+        
+        .sub {
+            color: var(--muted);
+            margin: 0;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+        
+        label {
+            font-size: 12px;
+            color: var(--muted);
+            display: block;
+            margin-bottom: 6px;
+        }
+        
+        select,
+        input,
+        textarea,
+        button {
+            width: 100%;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+            background: #0f1a33;
+            color: var(--text);
+            padding: 10px;
+            font-size: 14px;
+        }
+        
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+            font-family: Consolas, "Courier New", monospace;
+        }
+        
+        .btns {
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            margin-top: 12px;
+        }
+        
+        button {
+            cursor: pointer;
+            transition: transform 120ms ease, border-color 120ms ease;
+            font-weight: 600;
+        }
+        
+        button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none;
+            border-color: var(--line);
+        }
+        
+        button:hover {
+            transform: translateY(-1px);
+            border-color: var(--accent);
+        }
+        
+        .btn-primary {
+            border-color: rgba(68, 163, 255, 0.6);
+            background: linear-gradient(180deg, rgba(68, 163, 255, 0.25), rgba(68, 163, 255, 0.1));
+        }
+        
+        .btn-active {
+            border-color: rgba(50, 213, 131, 0.8);
+            background: linear-gradient(180deg, rgba(50, 213, 131, 0.26), rgba(50, 213, 131, 0.1));
+            color: #ddffe9;
+        }
+        
+        .btn-stop {
+            border-color: rgba(255, 93, 93, 0.8);
+            background: linear-gradient(180deg, rgba(255, 93, 93, 0.2), rgba(255, 93, 93, 0.08));
+            color: #ffdede;
+        }
+        
+        .btn-muted {
+            border-color: rgba(255, 176, 32, 0.6);
+            background: linear-gradient(180deg, rgba(255, 176, 32, 0.2), rgba(255, 176, 32, 0.08));
+            color: #ffe5b4;
+        }
+        
+        .pill {
+            display: inline-flex;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            font-size: 12px;
+            margin-right: 8px;
+            color: var(--muted);
+        }
+        
+        .running {
+            color: var(--ok);
+            border-color: rgba(50, 213, 131, 0.4);
+        }
+        
+        .stopped {
+            color: var(--warn);
+            border-color: rgba(255, 176, 32, 0.4);
+        }
+        
+        .logbox {
+            min-height: 260px;
+            max-height: 420px;
+            overflow: auto;
+            background: #081027;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 10px;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 13px;
+        }
+        
+        .line {
+            margin: 0 0 8px;
+            color: #bdd1ff;
+        }
+        
+        .line.warn {
+            color: #ffd18a;
+        }
+        
+        .line.error {
+            color: #ff9696;
+        }
+        
+        .hint {
+            color: var(--muted);
+            font-size: 13px;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <section class="card">
+            <h1>Simulator Control Panel</h1>
+            <p class="sub">Manual control for deterministic demo flow: send, autoplay, next step, and reset scenario.</p>
+            <div style="margin-top: 12px;">
+                <span id="runState" class="pill stopped">stopped</span>
+                <span id="previewState" class="pill">preview: -</span>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="grid">
+                <div>
+                    <label for="variant">Variant</label>
+                    <select id="variant"></select>
+                </div>
+                <div>
+                    <label for="routeMode">Route mode</label>
+                    <select id="routeMode">
             <option value="n8n">n8n</option>
             <option value="direct">direct</option>
           </select>
-        </div>
-        <div>
-          <label for="dataMode">Data mode</label>
-          <select id="dataMode">
+                </div>
+                <div>
+                    <label for="dataMode">Data mode</label>
+                    <select id="dataMode">
             <option value="scenario">scenario</option>
             <option value="random">random</option>
           </select>
-        </div>
-        <div>
-          <label for="intervalMs">Interval (ms)</label>
-          <input id="intervalMs" type="number" min="500" step="100" value="2500" />
-        </div>
-      </div>
+                </div>
+                <div>
+                    <label for="intervalMs">Interval (ms)</label>
+                    <input id="intervalMs" type="number" min="500" step="100" value="2500" />
+                </div>
+            </div>
 
-      <div class="grid">
-        <div>
-          <label for="forceStatus">Force status (direct mode only)</label>
-          <select id="forceStatus">
+            <div class="grid">
+                <div>
+                    <label for="forceStatus">Force status (direct mode only)</label>
+                    <select id="forceStatus">
             <option value="">auto evaluate</option>
             <option value="normal">normal</option>
             <option value="warning">warning</option>
             <option value="critical">critical</option>
           </select>
-        </div>
-        <div>
-          <label for="useCustom">Custom metrics JSON</label>
-          <select id="useCustom">
+                </div>
+                <div>
+                    <label for="useCustom">Custom metrics JSON</label>
+                    <select id="useCustom">
             <option value="no">No</option>
             <option value="yes">Yes</option>
           </select>
-        </div>
-      </div>
+                </div>
+            </div>
 
-      <label for="metrics">Metrics payload (only used when Custom metrics = Yes)</label>
-      <textarea id="metrics" placeholder='{"machine_temp": 95, "vibration": 86, "pressure": 26}'></textarea>
+            <label for="metrics">Metrics payload (only used when Custom metrics = Yes)</label>
+            <textarea id="metrics" placeholder='{"machine_temp": 95, "vibration": 86, "pressure": 26}'></textarea>
 
-      <div class="btns">
-        <button id="sendOnce">Send once</button>
-        <button id="nextStep">Next step</button>
-        <button id="startAuto" class="btn-primary">Start autoplay</button>
-        <button id="stopAuto" class="btn-stop">Stop autoplay</button>
-        <button id="resetOne" class="btn-muted">Reset selected scenario</button>
-        <button id="resetAll" class="btn-muted">Reset all scenarios</button>
-      </div>
-      <p class="hint">Tip: choose scenario mode + variant=factory to demo clear normal -> warning -> critical transitions.</p>
-    </section>
+            <div class="btns">
+                <button id="sendOnce">Send once</button>
+                <button id="nextStep">Next step</button>
+                <button id="startAuto" class="btn-primary">Start autoplay</button>
+                <button id="stopAuto" class="btn-stop">Stop autoplay</button>
+                <button id="resetOne" class="btn-muted">Reset selected scenario</button>
+                <button id="resetAll" class="btn-muted">Reset all scenarios</button>
+            </div>
+            <p class="hint">Tip: choose scenario mode + variant=factory to demo clear normal -> warning -> critical transitions.</p>
+        </section>
 
-    <section class="card">
-      <h3 style="margin-top: 0;">Live Logs</h3>
-      <div id="logs" class="logbox"></div>
-    </section>
-  </div>
+        <section class="card">
+            <h3 style="margin-top: 0;">Live Logs</h3>
+            <div id="logs" class="logbox"></div>
+        </section>
+    </div>
 
-  <script>
-    const $ = (id) => document.getElementById(id);
+    <script>
+        const $ = (id) => document.getElementById(id);
 
-    const stateEl = $('runState');
-    const previewEl = $('previewState');
-    const logsEl = $('logs');
+        const stateEl = $('runState');
+        const previewEl = $('previewState');
+        const logsEl = $('logs');
 
-    const variantEl = $('variant');
-    const routeModeEl = $('routeMode');
-    const dataModeEl = $('dataMode');
-    const intervalEl = $('intervalMs');
-    const forceStatusEl = $('forceStatus');
-    const useCustomEl = $('useCustom');
-    const metricsEl = $('metrics');
-    const sendOnceBtn = $('sendOnce');
-    const nextStepBtn = $('nextStep');
-    const startAutoBtn = $('startAuto');
-    const stopAutoBtn = $('stopAuto');
-    const resetOneBtn = $('resetOne');
-    const resetAllBtn = $('resetAll');
+        const variantEl = $('variant');
+        const routeModeEl = $('routeMode');
+        const dataModeEl = $('dataMode');
+        const intervalEl = $('intervalMs');
+        const forceStatusEl = $('forceStatus');
+        const useCustomEl = $('useCustom');
+        const metricsEl = $('metrics');
+        const sendOnceBtn = $('sendOnce');
+        const nextStepBtn = $('nextStep');
+        const startAutoBtn = $('startAuto');
+        const stopAutoBtn = $('stopAuto');
+        const resetOneBtn = $('resetOne');
+        const resetAllBtn = $('resetAll');
 
-    let isBusy = false;
-    let isRunning = false;
+        let isBusy = false;
+        let isRunning = false;
 
-    async function api(path, method = 'GET', body) {
-      const res = await fetch(path, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: body ? JSON.stringify(body) : undefined
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data.error || 'Request failed');
-      }
-      return data;
-    }
-
-    function fmtLog(log) {
-      const cls = log.level === 'error' ? 'line error' : (log.level === 'warn' ? 'line warn' : 'line');
-      return `<p class="${cls}">[${log.ts}] ${log.level.toUpperCase()} ${log.message}</p>`;
-    }
-
-    async function loadVariants() {
-      const data = await api('/api/variants');
-      variantEl.innerHTML = '<option value="all">all</option>' + data.variants
-        .map(v => `<option value="${v.key}">${v.key}</option>`)
-        .join('');
-      variantEl.value = 'factory';
-    }
-
-    async function refreshPreview() {
-      if (variantEl.value === 'all') {
-        previewEl.textContent = 'preview: all variants';
-        return;
-      }
-      const p = await api(`/api/preview?variant=${encodeURIComponent(variantEl.value)}`);
-      if (!p.preview) {
-        previewEl.textContent = 'preview: random fallback';
-        return;
-      }
-      previewEl.textContent = `preview: ${variantEl.value} [${p.preview.stepIndex}/${p.preview.totalSteps}] ${p.preview.label}`;
-    }
-
-    async function refreshState() {
-      const data = await api('/api/state');
-      isRunning = Boolean(data.running);
-      stateEl.textContent = isRunning ? 'running' : 'stopped';
-      stateEl.className = `pill ${isRunning ? 'running' : 'stopped'}`;
-      logsEl.innerHTML = (data.logs || []).map(fmtLog).join('');
-      updateButtons();
-      await refreshPreview();
-    }
-
-    function updateButtons() {
-      sendOnceBtn.disabled = isBusy || isRunning;
-      nextStepBtn.disabled = isBusy || isRunning;
-      startAutoBtn.disabled = isBusy || isRunning;
-      stopAutoBtn.disabled = isBusy || !isRunning;
-      resetOneBtn.disabled = isBusy;
-      resetAllBtn.disabled = isBusy;
-
-      startAutoBtn.classList.toggle('btn-active', isRunning);
-      if (isRunning) {
-        startAutoBtn.textContent = 'Autoplay running';
-        stopAutoBtn.textContent = 'Stop autoplay now';
-      } else {
-        startAutoBtn.textContent = 'Start autoplay';
-        stopAutoBtn.textContent = 'Stop autoplay';
-      }
-    }
-
-    async function withBusy(task) {
-      if (isBusy) {
-        return;
-      }
-      isBusy = true;
-      updateButtons();
-      try {
-        await task();
-      } finally {
-        isBusy = false;
-        updateButtons();
-      }
-    }
-
-    function buildPayload() {
-      let metrics = null;
-      if (useCustomEl.value === 'yes') {
-        const raw = metricsEl.value.trim();
-        if (!raw) {
-          throw new Error('Metrics JSON is empty');
+        async function api(path, method = 'GET', body) {
+            const res = await fetch(path, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: body ? JSON.stringify(body) : undefined
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data.error || 'Request failed');
+            }
+            return data;
         }
-        metrics = JSON.parse(raw);
-      }
-      return {
-        variant: variantEl.value,
-        routeMode: routeModeEl.value,
-        dataMode: dataModeEl.value,
-        intervalMs: Number(intervalEl.value) || 2500,
-        forceStatus: forceStatusEl.value || null,
-        metrics
-      };
-    }
 
-    async function doSend() {
-      const payload = buildPayload();
-      await api('/api/send', 'POST', payload);
-      await refreshState();
-    }
+        function fmtLog(log) {
+            const cls = log.level === 'error' ? 'line error' : (log.level === 'warn' ? 'line warn' : 'line');
+            return `<p class="${cls}">[${log.ts}] ${log.level.toUpperCase()} ${log.message}</p>`;
+        }
 
-    sendOnceBtn.addEventListener('click', () => withBusy(async () => {
-      try {
-        await doSend();
-      } catch (e) {
-        alert(e.message);
-      }
-    }));
+        async function loadVariants() {
+            const data = await api('/api/variants');
+            variantEl.innerHTML = '<option value="all">all</option>' + data.variants
+                .map(v => `<option value="${v.key}">${v.key}</option>`)
+                .join('');
+            variantEl.value = 'factory';
+        }
 
-    nextStepBtn.addEventListener('click', () => withBusy(async () => {
-      try {
-        await doSend();
-      } catch (e) {
-        alert(e.message);
-      }
-    }));
+        async function refreshPreview() {
+            if (variantEl.value === 'all') {
+                previewEl.textContent = 'preview: all variants';
+                return;
+            }
+            const p = await api(`/api/preview?variant=${encodeURIComponent(variantEl.value)}`);
+            if (!p.preview) {
+                previewEl.textContent = 'preview: random fallback';
+                return;
+            }
+            previewEl.textContent = `preview: ${variantEl.value} [${p.preview.stepIndex}/${p.preview.totalSteps}] ${p.preview.label}`;
+        }
 
-    startAutoBtn.addEventListener('click', () => withBusy(async () => {
-      try {
-        const payload = buildPayload();
-        await api('/api/start', 'POST', payload);
-        await refreshState();
-      } catch (e) {
-        alert(e.message);
-      }
-    }));
+        async function refreshState() {
+            const data = await api('/api/state');
+            isRunning = Boolean(data.running);
+            stateEl.textContent = isRunning ? 'running' : 'stopped';
+            stateEl.className = `pill ${isRunning ? 'running' : 'stopped'}`;
+            logsEl.innerHTML = (data.logs || []).map(fmtLog).join('');
+            updateButtons();
+            await refreshPreview();
+        }
 
-    stopAutoBtn.addEventListener('click', () => withBusy(async () => {
-      try {
-        await api('/api/stop', 'POST');
-        await refreshState();
-      } catch (e) {
-        alert(e.message);
-      }
-    }));
+        function updateButtons() {
+            sendOnceBtn.disabled = isBusy || isRunning;
+            nextStepBtn.disabled = isBusy || isRunning;
+            startAutoBtn.disabled = isBusy || isRunning;
+            stopAutoBtn.disabled = isBusy || !isRunning;
+            resetOneBtn.disabled = isBusy;
+            resetAllBtn.disabled = isBusy;
 
-    resetOneBtn.addEventListener('click', () => withBusy(async () => {
-      try {
-        await api('/api/reset', 'POST', { variant: variantEl.value === 'all' ? 'factory' : variantEl.value });
-        await refreshState();
-      } catch (e) {
-        alert(e.message);
-      }
-    }));
+            startAutoBtn.classList.toggle('btn-active', isRunning);
+            if (isRunning) {
+                startAutoBtn.textContent = 'Autoplay running';
+                stopAutoBtn.textContent = 'Stop autoplay now';
+            } else {
+                startAutoBtn.textContent = 'Start autoplay';
+                stopAutoBtn.textContent = 'Stop autoplay';
+            }
+        }
 
-    resetAllBtn.addEventListener('click', () => withBusy(async () => {
-      try {
-        await api('/api/reset', 'POST', { variant: 'all' });
-        await refreshState();
-      } catch (e) {
-        alert(e.message);
-      }
-    }));
+        async function withBusy(task) {
+            if (isBusy) {
+                return;
+            }
+            isBusy = true;
+            updateButtons();
+            try {
+                await task();
+            } finally {
+                isBusy = false;
+                updateButtons();
+            }
+        }
 
-    variantEl.addEventListener('change', refreshPreview);
+        function buildPayload() {
+            let metrics = null;
+            if (useCustomEl.value === 'yes') {
+                const raw = metricsEl.value.trim();
+                if (!raw) {
+                    throw new Error('Metrics JSON is empty');
+                }
+                metrics = JSON.parse(raw);
+            }
+            return {
+                variant: variantEl.value,
+                routeMode: routeModeEl.value,
+                dataMode: dataModeEl.value,
+                intervalMs: Number(intervalEl.value) || 2500,
+                forceStatus: forceStatusEl.value || null,
+                metrics
+            };
+        }
 
-    async function boot() {
-      await loadVariants();
-      updateButtons();
-      await refreshState();
-      setInterval(refreshState, 2000);
-    }
+        async function doSend() {
+            const payload = buildPayload();
+            await api('/api/send', 'POST', payload);
+            await refreshState();
+        }
 
-    boot().catch((e) => {
-      logsEl.innerHTML = `<p class="line error">Boot failed: ${e.message}</p>`;
-    });
-  </script>
+        sendOnceBtn.addEventListener('click', () => withBusy(async() => {
+            try {
+                await doSend();
+            } catch (e) {
+                alert(e.message);
+            }
+        }));
+
+        nextStepBtn.addEventListener('click', () => withBusy(async() => {
+            try {
+                await doSend();
+            } catch (e) {
+                alert(e.message);
+            }
+        }));
+
+        startAutoBtn.addEventListener('click', () => withBusy(async() => {
+            try {
+                const payload = buildPayload();
+                await api('/api/start', 'POST', payload);
+                await refreshState();
+            } catch (e) {
+                alert(e.message);
+            }
+        }));
+
+        stopAutoBtn.addEventListener('click', () => withBusy(async() => {
+            try {
+                await api('/api/stop', 'POST');
+                await refreshState();
+            } catch (e) {
+                alert(e.message);
+            }
+        }));
+
+        resetOneBtn.addEventListener('click', () => withBusy(async() => {
+            try {
+                await api('/api/reset', 'POST', {
+                    variant: variantEl.value === 'all' ? 'factory' : variantEl.value
+                });
+                await refreshState();
+            } catch (e) {
+                alert(e.message);
+            }
+        }));
+
+        resetAllBtn.addEventListener('click', () => withBusy(async() => {
+            try {
+                await api('/api/reset', 'POST', {
+                    variant: 'all'
+                });
+                await refreshState();
+            } catch (e) {
+                alert(e.message);
+            }
+        }));
+
+        variantEl.addEventListener('change', refreshPreview);
+
+        async function boot() {
+            await loadVariants();
+            updateButtons();
+            await refreshState();
+            setInterval(refreshState, 2000);
+        }
+
+        boot().catch((e) => {
+            logsEl.innerHTML = `<p class="line error">Boot failed: ${e.message}</p>`;
+        });
+    </script>
 </body>
+
 </html>

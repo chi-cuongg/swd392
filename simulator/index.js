@@ -167,7 +167,7 @@ const getMetricsForVariant = (variantKey) => {
     };
 };
 
-const sendData = async (variantKey) => {
+const sendData = async(variantKey) => {
     const variant = VARIANTS[variantKey];
     if (!variant) return;
 

@@ -17,7 +17,7 @@ function mergeSeverity(current, next) {
     return rank[next] > rank[current] ? next : current;
 }
 
-exports.ingestData = async (req, res) => {
+exports.ingestData = async(req, res) => {
     try {
         const { organizationId: rawOrganizationId, deviceId, domain, metrics, status, message } = req.body;
 
@@ -28,9 +28,9 @@ exports.ingestData = async (req, res) => {
             });
         }
 
-        const organization = rawOrganizationId
-            ? await prisma.organization.findUnique({ where: { id: rawOrganizationId } })
-            : await prisma.organization.findUnique({ where: { slug: domain } });
+        const organization = rawOrganizationId ?
+            await prisma.organization.findUnique({ where: { id: rawOrganizationId } }) :
+            await prisma.organization.findUnique({ where: { slug: domain } });
         if (!organization) {
             return res.status(404).json({ success: false, error: 'Organization not found' });
         }

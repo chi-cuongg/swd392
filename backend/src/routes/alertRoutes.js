@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../utils/prisma');
 
-router.get('/', async (req, res) => {
+router.get('/', async(req, res) => {
     try {
         const { organizationId, domain, severity, unresolvedOnly, limit = 100 } = req.query;
         const where = {};
@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
     }
 });
 
-router.put('/:id/resolve', async (req, res) => {
+router.put('/:id/resolve', async(req, res) => {
     try {
         const alert = await prisma.alert.update({
             where: { id: req.params.id },

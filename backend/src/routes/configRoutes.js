@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../utils/prisma');
 
-router.get('/organizations', async (req, res) => {
+router.get('/organizations', async(req, res) => {
     try {
         const organizations = await prisma.organization.findMany({
             select: { id: true, slug: true, name: true, description: true },
@@ -14,7 +14,7 @@ router.get('/organizations', async (req, res) => {
     }
 });
 
-router.get('/variants', async (req, res) => {
+router.get('/variants', async(req, res) => {
     try {
         const { organizationId } = req.query;
         const where = organizationId ? { organizationId } : {};
@@ -45,7 +45,7 @@ router.get('/variants', async (req, res) => {
     }
 });
 
-router.get('/variants/:id', async (req, res) => {
+router.get('/variants/:id', async(req, res) => {
     try {
         const { organizationId } = req.query;
         if (!organizationId) return res.status(400).json({ error: 'organizationId is required' });
@@ -69,11 +69,11 @@ router.get('/variants/:id', async (req, res) => {
         const thresholds = {};
         for (const metric of metrics) {
             thresholds[metric.key] = {
-                warn: metric.threshold?.warn ?? null,
-                critical: metric.threshold?.critical ?? null,
+                warn: metric.threshold ? .warn ? ? null,
+                critical: metric.threshold ? .critical ? ? null,
                 unit: metric.unit,
-                invertWarning: metric.threshold?.invertWarning || false,
-                values: metric.threshold?.valueMapping ? JSON.parse(metric.threshold.valueMapping) : undefined
+                invertWarning: metric.threshold ? .invertWarning || false,
+                values: metric.threshold ? .valueMapping ? JSON.parse(metric.threshold.valueMapping) : undefined
             };
         }
 

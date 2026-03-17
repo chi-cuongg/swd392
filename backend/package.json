@@ -1,36 +1,36 @@
 {
-  "name": "backend",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "setup": "npm install && npm run prisma:migrate -- --name local_setup",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:reset": "prisma migrate reset --force",
-    "prisma:seed": "node prisma/seed.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "prisma": {
-    "seed": "node prisma/seed.js"
-  },
-  "dependencies": {
-    "@prisma/client": "^5.22.0",
-    "bcryptjs": "^3.0.3",
-    "cors": "^2.8.6",
-    "dotenv": "^17.3.1",
-    "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3",
-    "prisma": "^5.22.0",
-    "socket.io": "^4.8.3"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.11"
-  }
+    "name": "backend",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "node src/index.js",
+        "dev": "nodemon src/index.js",
+        "setup": "npm install && npm run prisma:migrate -- --name local_setup",
+        "prisma:generate": "prisma generate",
+        "prisma:migrate": "prisma migrate dev",
+        "prisma:reset": "prisma migrate reset --force",
+        "prisma:seed": "node prisma/seed.js"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "commonjs",
+    "prisma": {
+        "seed": "node prisma/seed.js"
+    },
+    "dependencies": {
+        "@prisma/client": "^5.22.0",
+        "bcryptjs": "^3.0.3",
+        "cors": "^2.8.6",
+        "dotenv": "^17.3.1",
+        "express": "^5.2.1",
+        "jsonwebtoken": "^9.0.3",
+        "prisma": "^5.22.0",
+        "socket.io": "^4.8.3"
+    },
+    "devDependencies": {
+        "nodemon": "^3.1.11"
+    }
 }

@@ -1,7 +1,7 @@
 [
-  { "label": "baseline", "metrics": { "temp": 28.0, "smoke": 5.0, "door": 0, "motion": 0 } },
-  { "label": "warm_house", "metrics": { "temp": 38.5, "smoke": 12.0, "door": 0, "motion": 1 } },
-  { "label": "warning_smoke", "metrics": { "temp": 44.0, "smoke": 35.0, "door": 1, "motion": 1 } },
-  { "label": "critical_fire", "metrics": { "temp": 58.0, "smoke": 72.0, "door": 1, "motion": 1 } },
-  { "label": "stabilized", "metrics": { "temp": 31.0, "smoke": 9.0, "door": 0, "motion": 0 } }
+    { "label": "baseline", "metrics": { "temp": 28.0, "smoke": 5.0, "door": 0, "motion": 0 } },
+    { "label": "warm_house", "metrics": { "temp": 38.5, "smoke": 12.0, "door": 0, "motion": 1 } },
+    { "label": "warning_smoke", "metrics": { "temp": 44.0, "smoke": 35.0, "door": 1, "motion": 1 } },
+    { "label": "critical_fire", "metrics": { "temp": 58.0, "smoke": 72.0, "door": 1, "motion": 1 } },
+    { "label": "stabilized", "metrics": { "temp": 31.0, "smoke": 9.0, "door": 0, "motion": 0 } }
 ]

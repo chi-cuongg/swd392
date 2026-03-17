@@ -3,7 +3,7 @@ const router = express.Router();
 const prisma = require('../utils/prisma');
 
 // Get all devices
-router.get('/', async (req, res) => {
+router.get('/', async(req, res) => {
     try {
         const { organizationId, domain } = req.query;
         const where = {};
@@ -27,7 +27,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get device by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', async(req, res) => {
     try {
         const device = await prisma.device.findUnique({
             where: { id: req.params.id },
