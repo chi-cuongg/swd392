@@ -4,7 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js all n8n 3000",
+    "start:direct": "node index.js all direct 3000",
+    "start:home": "node index.js home n8n 3000",
+    "start:hospital": "node index.js hospital n8n 3000",
+    "start:factory": "node index.js factory n8n 3000",
+    "start:traffic": "node index.js traffic n8n 3000",
+    "start:farm": "node index.js farm n8n 3000"
   },
   "keywords": [],
   "author": "",

@@ -4,8 +4,7 @@ import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import axios from 'axios';
 import './index.css';
-
-const API_BASE = 'http://localhost:3000/api';
+import { API_BASE } from './config';
 
 function App() {
   const [organizations, setOrganizations] = useState([]);

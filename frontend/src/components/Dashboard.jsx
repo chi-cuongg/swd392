@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSocket } from '../context/SocketContext';
 import GaugeWidget from './GaugeWidget';
 import LineChartWidget from './LineChartWidget';
@@ -6,8 +6,7 @@ import StatusWidget from './StatusWidget';
 import MetricCard from './MetricCard';
 import AlertPanel from './AlertPanel';
 import axios from 'axios';
-
-const API_BASE = 'http://localhost:3000/api';
+import { API_BASE } from '../config';
 
 // Widget factory
 const renderWidget = (widget, data, history, status, config) => {

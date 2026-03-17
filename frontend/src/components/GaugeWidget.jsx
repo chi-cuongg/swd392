@@ -10,13 +10,15 @@ const GaugeWidget = ({ value, min = 0, max = 100, label, unit, color = '#3b82f6'
     // Determine color from thresholds
     let gaugeColor = color;
     if (thresholds) {
+        const hasWarn = typeof thresholds.warn === 'number';
+        const hasCritical = typeof thresholds.critical === 'number';
         if (thresholds.invertWarning) {
-            if (value < thresholds.critical) gaugeColor = '#ef4444';
-            else if (value < thresholds.warn) gaugeColor = '#f59e0b';
+            if (hasCritical && value < thresholds.critical) gaugeColor = '#ef4444';
+            else if (hasWarn && value < thresholds.warn) gaugeColor = '#f59e0b';
             else gaugeColor = '#22c55e';
         } else {
-            if (value >= thresholds.critical) gaugeColor = '#ef4444';
-            else if (value >= thresholds.warn) gaugeColor = '#f59e0b';
+            if (hasCritical && value >= thresholds.critical) gaugeColor = '#ef4444';
+            else if (hasWarn && value >= thresholds.warn) gaugeColor = '#f59e0b';
             else gaugeColor = '#22c55e';
         }
     }

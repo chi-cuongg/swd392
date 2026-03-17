@@ -42,6 +42,36 @@ He thong su dung cac entity:
 
 ## Run Local
 
+### Quick Fullstack Start
+
+1. Backend:
+```bash
+cd backend
+npm run setup
+npm run dev
+```
+
+2. n8n:
+```bash
+cd n8n
+docker compose up -d
+```
+Import 5 workflow files and publish them in n8n UI.
+
+3. Frontend:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+4. Simulator:
+```bash
+cd simulator
+npm install
+npm start
+```
+
 ### 1. Backend (Core Platform)
 ```bash
 cd backend
@@ -62,6 +92,11 @@ npm install
 npm run dev
 # → Dashboard: http://localhost:5173
 ```
+
+Optional frontend env:
+- Copy `frontend/.env.example` to `.env.local` and adjust:
+  - `VITE_API_BASE`
+  - `VITE_SOCKET_URL`
 
 ### 3. Simulator (Fake IoT Data)
 ```bash
