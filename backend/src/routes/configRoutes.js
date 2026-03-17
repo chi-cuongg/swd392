@@ -69,11 +69,11 @@ router.get('/variants/:id', async(req, res) => {
         const thresholds = {};
         for (const metric of metrics) {
             thresholds[metric.key] = {
-                warn: metric.threshold ? .warn ? ? null,
-                critical: metric.threshold ? .critical ? ? null,
+                warn: metric.threshold?.warn ?? null,
+                critical: metric.threshold?.critical ?? null,
                 unit: metric.unit,
-                invertWarning: metric.threshold ? .invertWarning || false,
-                values: metric.threshold ? .valueMapping ? JSON.parse(metric.threshold.valueMapping) : undefined
+                invertWarning: metric.threshold?.invertWarning || false,
+                values: metric.threshold?.valueMapping ? JSON.parse(metric.threshold.valueMapping) : undefined
             };
         }
 
