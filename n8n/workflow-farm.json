@@ -1,5 +1,5 @@
 {
-    "name": "SMP - Smart Farm Monitor",
+    "name": "SMP - Farm Ingest Router",
     "nodes": [
         {
             "parameters": {
@@ -19,10 +19,10 @@
         },
         {
             "parameters": {
-                "jsCode": "const input = $input.first().json.body || $input.first().json;\nconst m = input.metrics;\nlet status = 'normal';\nlet message = 'Farm conditions optimal.';\n\nif (m.soil_moisture < 20 || m.ph > 9 || m.ph < 4.5) {\n  status = 'critical';\n  message = '🌾 CRITICAL: Soil conditions dangerous! Moisture=' + m.soil_moisture + '%, pH=' + m.ph;\n} else if (m.soil_moisture < 30 || m.ph > 8 || m.light_intensity > 1000) {\n  status = 'warning';\n  message = '⚠️ Warning: Soil needs attention. Moisture=' + m.soil_moisture + '%';\n}\n\nreturn [{\n  json: {\n    deviceId: input.deviceId || 'dev_farm_01',\n    domain: 'farm',\n    metrics: m,\n    status: status,\n    message: message,\n    timestamp: Date.now()\n  }\n}];"
+                "jsCode": "const input = $input.first().json.body || $input.first().json;\nreturn [{\n  json: {\n    organizationId: input.organizationId || 'org_farm',\n    deviceId: input.deviceId || 'dev_farm_01',\n    domain: 'farm',\n    metrics: input.metrics || {},\n    timestamp: input.timestamp || Date.now()\n  }\n}];"
             },
             "id": "5a5a5a5a-0005-0005-0005-000000000002",
-            "name": "Evaluate Farm",
+            "name": "Normalize Payload",
             "type": "n8n-nodes-base.code",
             "typeVersion": 2,
             "position": [
@@ -54,14 +54,14 @@
             "main": [
                 [
                     {
-                        "node": "Evaluate Farm",
+                        "node": "Normalize Payload",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "Evaluate Farm": {
+        "Normalize Payload": {
             "main": [
                 [
                     {

@@ -1,5 +1,5 @@
 {
-    "name": "SMP - Smart Home Fire Detection",
+    "name": "SMP - Smart Home Ingest Router",
     "nodes": [
         {
             "parameters": {
@@ -19,59 +19,15 @@
         },
         {
             "parameters": {
-                "conditions": {
-                    "options": {
-                        "caseSensitive": true,
-                        "leftValue": "",
-                        "typeValidation": "strict"
-                    },
-                    "conditions": [
-                        {
-                            "id": "cond1",
-                            "leftValue": "={{ $json.body.metrics.temp }}",
-                            "rightValue": 50,
-                            "operator": {
-                                "type": "number",
-                                "operation": "gt"
-                            }
-                        }
-                    ],
-                    "combinator": "or"
-                }
+                "jsCode": "const input = $input.first().json.body || $input.first().json;\nreturn [{\n  json: {\n    organizationId: input.organizationId || 'org_home',\n    deviceId: input.deviceId || 'dev_home_01',\n    domain: 'home',\n    metrics: input.metrics || {},\n    timestamp: input.timestamp || Date.now()\n  }\n}];"
             },
             "id": "1a1a1a1a-0001-0001-0001-000000000002",
-            "name": "IF Temp > 50",
-            "type": "n8n-nodes-base.if",
+            "name": "Normalize Payload",
+            "type": "n8n-nodes-base.code",
             "typeVersion": 2,
             "position": [
-                480,
+                520,
                 300
-            ]
-        },
-        {
-            "parameters": {
-                "jsCode": "const input = $input.first().json.body || $input.first().json;\nconst metrics = input.metrics;\nlet status = 'critical';\nlet message = '🔥 FIRE ALERT! Temperature: ' + metrics.temp + '°C';\nif (metrics.smoke > 60) {\n  message += ' | Smoke: ' + metrics.smoke + '%';\n}\nreturn [{\n  json: {\n    deviceId: input.deviceId || 'dev_home_01',\n    domain: 'home',\n    metrics: metrics,\n    status: status,\n    message: message,\n    timestamp: Date.now()\n  }\n}];"
-            },
-            "id": "1a1a1a1a-0001-0001-0001-000000000003",
-            "name": "Set Critical",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [
-                700,
-                200
-            ]
-        },
-        {
-            "parameters": {
-                "jsCode": "const input = $input.first().json.body || $input.first().json;\nconst metrics = input.metrics;\nlet status = 'normal';\nlet message = 'All systems normal.';\nif (metrics.temp > 40 || metrics.smoke > 30) {\n  status = 'warning';\n  message = '⚠️ Elevated temperature or smoke levels.';\n}\nreturn [{\n  json: {\n    deviceId: input.deviceId || 'dev_home_01',\n    domain: 'home',\n    metrics: metrics,\n    status: status,\n    message: message,\n    timestamp: Date.now()\n  }\n}];"
-            },
-            "id": "1a1a1a1a-0001-0001-0001-000000000004",
-            "name": "Set Normal/Warning",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [
-                700,
-                420
             ]
         },
         {
@@ -83,12 +39,12 @@
                 "jsonBody": "={{ JSON.stringify($json) }}",
                 "options": {}
             },
-            "id": "1a1a1a1a-0001-0001-0001-000000000005",
+            "id": "1a1a1a1a-0001-0001-0001-000000000003",
             "name": "POST to Core",
             "type": "n8n-nodes-base.httpRequest",
             "typeVersion": 4,
             "position": [
-                940,
+                780,
                 300
             ]
         }
@@ -98,43 +54,14 @@
             "main": [
                 [
                     {
-                        "node": "IF Temp > 50",
+                        "node": "Normalize Payload",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "IF Temp > 50": {
-            "main": [
-                [
-                    {
-                        "node": "Set Critical",
-                        "type": "main",
-                        "index": 0
-                    }
-                ],
-                [
-                    {
-                        "node": "Set Normal/Warning",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Set Critical": {
-            "main": [
-                [
-                    {
-                        "node": "POST to Core",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Set Normal/Warning": {
+        "Normalize Payload": {
             "main": [
                 [
                     {

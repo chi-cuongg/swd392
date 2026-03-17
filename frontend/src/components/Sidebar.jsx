@@ -1,14 +1,14 @@
 import React from 'react';
 
-const VARIANTS = [
-    { id: 'home', label: 'Smart Home', icon: '🏠', color: '#3b82f6' },
-    { id: 'hospital', label: 'Hospital', icon: '🏥', color: '#ef4444' },
-    { id: 'factory', label: 'Factory', icon: '🏭', color: '#f59e0b' },
-    { id: 'traffic', label: 'Traffic', icon: '🚗', color: '#10b981' },
-    { id: 'farm', label: 'Farm', icon: '🌾', color: '#22c55e' },
-];
-
-const Sidebar = ({ activeVariant, onVariantChange, stats }) => {
+const Sidebar = ({
+    organizations,
+    activeOrganizationId,
+    onOrganizationChange,
+    variants,
+    activeVariant,
+    onVariantChange,
+    stats
+}) => {
     return (
         <aside className="w-64 min-h-screen bg-dark-800 border-r border-slate-700/50 flex flex-col">
             {/* Logo */}
@@ -22,11 +22,24 @@ const Sidebar = ({ activeVariant, onVariantChange, stats }) => {
                 </h1>
             </div>
 
+            <div className="p-4 border-b border-slate-700/50">
+                <p className="text-xs text-slate-500 uppercase tracking-wider mb-2 font-semibold">Organization</p>
+                <select
+                    value={activeOrganizationId}
+                    onChange={(e) => onOrganizationChange(e.target.value)}
+                    className="w-full rounded-lg bg-slate-900 border border-slate-700 text-slate-200 text-sm px-3 py-2"
+                >
+                    {organizations.map((org) => (
+                        <option key={org.id} value={org.id}>{org.name}</option>
+                    ))}
+                </select>
+            </div>
+
             {/* Variant Selector */}
             <div className="p-4">
                 <p className="text-xs text-slate-500 uppercase tracking-wider mb-3 font-semibold">Domains</p>
                 <nav className="space-y-1">
-                    {VARIANTS.map(v => (
+                    {variants.map(v => (
                         <button
                             key={v.id}
                             onClick={() => onVariantChange(v.id)}
@@ -35,7 +48,7 @@ const Sidebar = ({ activeVariant, onVariantChange, stats }) => {
                                     : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
                                 }`}
                         >
-                            <span className="text-lg">{v.icon}</span>
+                            <span className="text-lg">•</span>
                             <span className="font-medium">{v.label}</span>
                         </button>
                     ))}

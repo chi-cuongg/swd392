@@ -1,5 +1,5 @@
 {
-    "name": "SMP - Smart Traffic Monitor",
+    "name": "SMP - Traffic Ingest Router",
     "nodes": [
         {
             "parameters": {
@@ -19,10 +19,10 @@
         },
         {
             "parameters": {
-                "jsCode": "const input = $input.first().json.body || $input.first().json;\nconst m = input.metrics;\nlet status = 'normal';\nlet message = 'Traffic flow is normal.';\n\nif (m.accident === 1) {\n  status = 'critical';\n  message = '🚗 ACCIDENT DETECTED! Emergency response needed!';\n} else if (m.congestion === 2 || m.vehicle_density > 90) {\n  status = 'warning';\n  message = '🚦 Heavy traffic congestion. Density: ' + m.vehicle_density + ' v/min';\n}\n\nreturn [{\n  json: {\n    deviceId: input.deviceId || 'dev_traf_01',\n    domain: 'traffic',\n    metrics: m,\n    status: status,\n    message: message,\n    timestamp: Date.now()\n  }\n}];"
+                "jsCode": "const input = $input.first().json.body || $input.first().json;\nreturn [{\n  json: {\n    organizationId: input.organizationId || 'org_traffic',\n    deviceId: input.deviceId || 'dev_traf_01',\n    domain: 'traffic',\n    metrics: input.metrics || {},\n    timestamp: input.timestamp || Date.now()\n  }\n}];"
             },
             "id": "4a4a4a4a-0004-0004-0004-000000000002",
-            "name": "Evaluate Traffic",
+            "name": "Normalize Payload",
             "type": "n8n-nodes-base.code",
             "typeVersion": 2,
             "position": [
@@ -54,14 +54,14 @@
             "main": [
                 [
                     {
-                        "node": "Evaluate Traffic",
+                        "node": "Normalize Payload",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "Evaluate Traffic": {
+        "Normalize Payload": {
             "main": [
                 [
                     {

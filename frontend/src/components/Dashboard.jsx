@@ -64,7 +64,7 @@ const renderWidget = (widget, data, history, status, config) => {
     }
 };
 
-const Dashboard = ({ activeVariant }) => {
+const Dashboard = ({ activeOrganizationId, activeVariant }) => {
     const socket = useSocket();
     const [config, setConfig] = useState(null);
     const [data, setData] = useState({});
@@ -76,9 +76,12 @@ const Dashboard = ({ activeVariant }) => {
 
     // Fetch variant config from backend
     useEffect(() => {
+        if (!activeOrganizationId || !activeVariant) return;
         const fetchConfig = async () => {
             try {
-                const res = await axios.get(`${API_BASE}/config/variants/${activeVariant}`);
+                const res = await axios.get(`${API_BASE}/config/variants/${activeVariant}`, {
+                    params: { organizationId: activeOrganizationId }
+                });
                 setConfig(res.data);
             } catch (err) {
                 console.error('Failed to fetch config:', err);
@@ -90,13 +93,14 @@ const Dashboard = ({ activeVariant }) => {
         setHistory({});
         setStatus('normal');
         setAlerts([]);
-    }, [activeVariant]);
+    }, [activeOrganizationId, activeVariant]);
 
     // Socket listener
     useEffect(() => {
         if (!socket) return;
 
         const handler = (payload) => {
+            if (payload.organizationId !== activeOrganizationId) return;
             if (payload.domain !== activeVariant) return;
 
             setData(payload.metrics);
@@ -126,7 +130,7 @@ const Dashboard = ({ activeVariant }) => {
 
         socket.on('device_update', handler);
         return () => socket.off('device_update', handler);
-    }, [socket, activeVariant]);
+    }, [socket, activeOrganizationId, activeVariant]);
 
     if (!config) {
         return (

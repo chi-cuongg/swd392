@@ -1,6 +1,6 @@
 # Smart Monitoring Platform (SPLA Based)
 
-> Nền tảng giám sát IoT đa lĩnh vực dựa trên kiến trúc Software Product Line (SPLA), tích hợp Workflow Engine (n8n) và Real-time Communication (WebSocket).
+Nen tang giam sat IoT da tenant dua tren kien truc Software Product Line (SPLA), tich hop n8n workflow engine va realtime qua Socket.IO.
 
 ## 📁 Cấu trúc dự án
 
@@ -28,17 +28,32 @@ swd392/
 └── README.md
 ```
 
-## 🚀 Hướng dẫn chạy
+## SPLA Data Model
+
+He thong su dung cac entity:
+- Organization
+- User
+- Device
+- Metric
+- Threshold
+- SensorData
+- Alert
+- DashboardConfig
+
+## Run Local
 
 ### 1. Backend (Core Platform)
 ```bash
 cd backend
 npm install
-npx prisma generate
-npx prisma migrate dev --name init
+npm run prisma:migrate -- --name spla_init
 npm run dev
-# → Server: http://localhost:3000
+# Server: http://localhost:3000
 ```
+
+Ghi chu:
+- Backend tu dong seed du lieu mac dinh cho 5 domain neu database trong.
+- Tai khoan admin mac dinh: `admin@spla.local` / `admin123` (co the doi qua `.env`).
 
 ### 2. Frontend (Dashboard)
 ```bash
@@ -52,59 +67,60 @@ npm run dev
 ```bash
 cd simulator
 npm install
-# Tất cả variants:
-node index.js
-# Hoặc chỉ 1 variant (home/hospital/factory/traffic/farm):
-node index.js hospital
-# Tùy chỉnh interval (ms):
-node index.js all 1000
+# Tat ca variants qua n8n
+node index.js all n8n 3000
+
+# 1 variant qua n8n
+node index.js hospital n8n 3000
+
+# Fallback direct vao backend
+node index.js home direct 3000
 ```
 
-### 4. n8n (Workflow Engine — Optional)
+### 4. n8n (Workflow Engine)
 ```bash
 cd n8n
 docker-compose up -d
-# → n8n UI: http://localhost:5678
-# Import workflow-*.json vào n8n
+# n8n UI: http://localhost:5678
+# Import workflow-*.json vao n8n
 ```
 
-## 🔌 API Endpoints
+## API Endpoints
 
 | Method | Endpoint | Mô tả |
 |--------|----------|--------|
-| POST | `/api/ingest` | Nhận dữ liệu từ n8n/Simulator |
-| GET | `/api/devices` | Danh sách thiết bị |
-| GET | `/api/devices/:id` | Chi tiết thiết bị + logs |
-| GET | `/api/config/variants` | Danh sách biến thể SPLA |
-| GET | `/api/config/variants/:id` | Config chi tiết cho 1 variant |
-| GET | `/api/logs` | Query logs (filter: deviceId, level) |
-| GET | `/api/logs/stats` | Thống kê tổng hợp |
-| POST | `/api/auth/register` | Đăng ký |
-| POST | `/api/auth/login` | Đăng nhập (JWT) |
-| GET | `/api/auth/me` | Thông tin user hiện tại |
+| POST | `/api/ingest` | Nhan du lieu sensor (organization scoped) |
+| GET | `/api/config/organizations` | Danh sach organization |
+| GET | `/api/config/variants?organizationId=...` | Danh sach dashboard/domain theo organization |
+| GET | `/api/config/variants/:id?organizationId=...` | Dashboard config + thresholds |
+| GET | `/api/devices?organizationId=...` | Danh sach devices theo organization |
+| GET | `/api/logs?organizationId=...` | SensorData timeline |
+| GET | `/api/logs/stats?organizationId=...` | Thong ke tong hop |
+| GET | `/api/thresholds?organizationId=...` | Danh sach threshold theo metrics |
+| PUT | `/api/thresholds/:metricId` | Cap nhat threshold metric |
+| GET | `/api/alerts?organizationId=...` | Danh sach alerts |
+| PUT | `/api/alerts/:id/resolve` | Resolve alert |
+| POST | `/api/auth/register` | Dang ky user theo organization |
+| POST | `/api/auth/login` | Dang nhap theo organization |
+| GET | `/api/auth/me` | User profile + organization |
 
-## 📡 WebSocket Events
+## WebSocket Events
 
 | Event | Direction | Mô tả |
 |-------|-----------|--------|
-| `device_update` | Server → Client | Dữ liệu cảm biến realtime |
-| `join_variant` | Client → Server | Tham gia room theo variant |
+| `device_update` | Server -> Client | Sensor update realtime |
+| `alert_created` | Server -> Client | Alert moi duoc tao |
+| `join_scope` | Client -> Server | Join room theo organization/domain |
+| `leave_scope` | Client -> Server | Leave room theo organization/domain |
 
-## 🏗️ SPLA Architecture
+## SPLA Architecture
 
 ```
-                    [ CORE PLATFORM ]
-      ─────────────────────────────────────────────
-      │  Auth  │  Ingestion  │  WebSocket  │  UI  │
-      ─────────────────────────────────────────────
-              ▲            ▲            ▲
-              │            │            │
-      [ VARIANT 1 ]  [ VARIANT 2 ]  [ VARIANT 3 ] ...
-      (Smart Home)   (Hospital)     (Factory)
-           │              │              │
-      [ n8n Flow ]   [ n8n Flow ]   [ n8n Flow ]
-           │              │              │
-        ESP8266       Simulator      Simulator
+Simulator/Device -> n8n workflow -> Backend ingest
+  -> Threshold evaluation in backend
+  -> SensorData + Alert persisted in SQLite
+  -> Socket.IO push to org/domain rooms
+  -> Frontend dashboard render from DashboardConfig + realtime stream
 ```
 
 **5 Biến thể hỗ trợ:**
@@ -114,13 +130,7 @@ docker-compose up -d
 - 🚗 **Traffic** — Mật độ xe, Tai nạn, Tắc đường
 - 🌾 **Farm** — Độ ẩm đất, Ánh sáng, pH
 
-## 🧪 Demo Scenarios
-
-1. **Fire Alert**: Chạy `node index.js home` → Chờ `temp > 50` → Dashboard hiện popup đỏ
-2. **Patient Critical**: Chạy `node index.js hospital` → `heart_rate > 120` → Warning/Critical
-3. **Dynamic Switch**: Click variant trong Sidebar → Dashboard tự render widgets khác
-
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Backend**: Node.js, Express, Socket.io, Prisma, SQLite
 - **Frontend**: React, Vite, TailwindCSS, Chart.js

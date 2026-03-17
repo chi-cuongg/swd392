@@ -12,6 +12,7 @@ const ROUTE_MODE = process.argv[3] || 'n8n';
 const VARIANTS = {
     home: {
         id: 'dev_home_01',
+        organizationId: 'org_home',
         domain: 'home',
         n8nPath: '/smart-home',
         generate: () => {
@@ -29,6 +30,7 @@ const VARIANTS = {
     },
     hospital: {
         id: 'dev_hosp_01',
+        organizationId: 'org_hospital',
         domain: 'hospital',
         n8nPath: '/hospital',
         generate: () => {
@@ -45,6 +47,7 @@ const VARIANTS = {
     },
     factory: {
         id: 'dev_fact_01',
+        organizationId: 'org_factory',
         domain: 'factory',
         n8nPath: '/factory',
         generate: () => {
@@ -61,6 +64,7 @@ const VARIANTS = {
     },
     traffic: {
         id: 'dev_traf_01',
+        organizationId: 'org_traffic',
         domain: 'traffic',
         n8nPath: '/traffic',
         generate: () => {
@@ -77,6 +81,7 @@ const VARIANTS = {
     },
     farm: {
         id: 'dev_farm_01',
+        organizationId: 'org_farm',
         domain: 'farm',
         n8nPath: '/farm',
         generate: () => {
@@ -101,25 +106,53 @@ const sendData = async (variantKey) => {
 
     if (ROUTE_MODE === 'n8n') {
         // === Route through n8n (Production Flow) ===
-        // Simulator sends RAW data to n8n → n8n evaluates → n8n POSTs to Core
+        // Simulator sends RAW data to n8n webhook riêng của từng variant
+        // → n8n evaluates → n8n POSTs to Core /api/ingest
         const payload = {
+            organizationId: variant.organizationId,
             deviceId: variant.id,
             domain: variant.domain,
             metrics,
             timestamp: Date.now()
         };
 
+        const n8nUrl = `${N8N_BASE}${variant.n8nPath}`;
         try {
-            await axios.post(`${N8N_BASE}/smp-ingest`, payload);
-            console.log(`📡 [${variant.domain.toUpperCase()}] → n8n  ${JSON.stringify(metrics)}`);
+            await axios.post(n8nUrl, payload);
+            console.log(`📡 [${variant.domain.toUpperCase()}] → n8n (${n8nUrl})  ${JSON.stringify(metrics)}`);
         } catch (err) {
-            console.error(`❌ [${variant.domain}] n8n Error:`, err.message);
+            console.warn(`⚠️  [${variant.domain}] n8n unreachable (${err.message}), falling back to Direct...`);
+            // Fallback: gửi trực tiếp vào Core nếu n8n không chạy
+            try {
+                const { status, message } = variant.evaluate(metrics);
+                await axios.post(CORE_API, {
+                    organizationId: variant.organizationId,
+                    deviceId: variant.id,
+                    domain: variant.domain,
+                    metrics,
+                    status,
+                    message,
+                    timestamp: Date.now()
+                });
+                const icon = status === 'critical' ? '🔴' : status === 'warning' ? '🟡' : '🟢';
+                console.log(`${icon} [${variant.domain.toUpperCase()}] → Core (fallback)  ${JSON.stringify(metrics)} → ${status}`);
+            } catch (e2) {
+                console.error(`❌ [${variant.domain}] Core fallback also failed:`, e2.message);
+            }
         }
     } else {
         // === Direct to Core (Demo/Fallback) ===
         // Simulator evaluates locally and sends directly to Core
         const { status, message } = variant.evaluate(metrics);
-        const payload = { deviceId: variant.id, domain: variant.domain, metrics, status, message, timestamp: Date.now() };
+        const payload = {
+            organizationId: variant.organizationId,
+            deviceId: variant.id,
+            domain: variant.domain,
+            metrics,
+            status,
+            message,
+            timestamp: Date.now()
+        };
 
         try {
             await axios.post(CORE_API, payload);

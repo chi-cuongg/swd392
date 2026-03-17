@@ -3,6 +3,8 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const prisma = require('./utils/prisma');
+const { ensureDefaultData } = require('./utils/bootstrap');
 
 dotenv.config();
 
@@ -30,12 +32,16 @@ const deviceRoutes = require('./routes/deviceRoutes');
 const authRoutes = require('./routes/authRoutes');
 const configRoutes = require('./routes/configRoutes');
 const logRoutes = require('./routes/logRoutes');
+const thresholdRoutes = require('./routes/thresholdRoutes');
+const alertRoutes = require('./routes/alertRoutes');
 
 app.use('/api/ingest', ingestRoutes);
 app.use('/api/devices', deviceRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/logs', logRoutes);
+app.use('/api/thresholds', thresholdRoutes);
+app.use('/api/alerts', alertRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -46,14 +52,30 @@ app.get('/api/health', (req, res) => {
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
 
-  socket.on('join_variant', (variant) => {
-    socket.join(variant);
-    console.log(`Client ${socket.id} joined variant: ${variant}`);
+  socket.on('join_scope', ({ organizationId, domain }) => {
+    if (!organizationId) return;
+    const orgRoom = `org:${organizationId}`;
+    socket.join(orgRoom);
+    if (domain) {
+      const domainRoom = `org:${organizationId}:domain:${domain}`;
+      socket.join(domainRoom);
+      console.log(`Client ${socket.id} joined scope: ${domainRoom}`);
+      return;
+    }
+    console.log(`Client ${socket.id} joined scope: ${orgRoom}`);
   });
 
-  socket.on('leave_variant', (variant) => {
-    socket.leave(variant);
-    console.log(`Client ${socket.id} left variant: ${variant}`);
+  socket.on('leave_scope', ({ organizationId, domain }) => {
+    if (!organizationId) return;
+    if (domain) {
+      const domainRoom = `org:${organizationId}:domain:${domain}`;
+      socket.leave(domainRoom);
+      console.log(`Client ${socket.id} left scope: ${domainRoom}`);
+      return;
+    }
+    const orgRoom = `org:${organizationId}`;
+    socket.leave(orgRoom);
+    console.log(`Client ${socket.id} left scope: ${orgRoom}`);
   });
 
   socket.on('disconnect', () => {
@@ -62,8 +84,18 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`🚀 Smart Monitoring Platform running on port ${PORT}`);
-  console.log(`   API: http://localhost:${PORT}/api`);
-  console.log(`   WebSocket: ws://localhost:${PORT}`);
-});
+async function start() {
+  try {
+    await ensureDefaultData(prisma);
+    server.listen(PORT, () => {
+      console.log(`Smart Monitoring Platform running on port ${PORT}`);
+      console.log(`API: http://localhost:${PORT}/api`);
+      console.log(`WebSocket: ws://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+start();

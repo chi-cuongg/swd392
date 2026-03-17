@@ -1,5 +1,5 @@
 {
-    "name": "SMP - Factory Machine Monitor",
+    "name": "SMP - Factory Ingest Router",
     "nodes": [
         {
             "parameters": {
@@ -19,10 +19,10 @@
         },
         {
             "parameters": {
-                "jsCode": "const input = $input.first().json.body || $input.first().json;\nconst m = input.metrics;\nlet status = 'normal';\nlet message = 'All machines operating normally.';\n\nif (m.machine_temp > 90 || m.vibration > 80) {\n  status = 'critical';\n  message = '🏭 CRITICAL: Machine malfunction! Temp=' + m.machine_temp + '°C, Vibration=' + m.vibration + 'Hz';\n} else if (m.machine_temp > 70 || m.vibration > 50 || m.pressure > 25) {\n  status = 'warning';\n  message = '⚠️ Warning: Machine operating outside norms.';\n}\n\nreturn [{\n  json: {\n    deviceId: input.deviceId || 'dev_fact_01',\n    domain: 'factory',\n    metrics: m,\n    status: status,\n    message: message,\n    timestamp: Date.now()\n  }\n}];"
+                "jsCode": "const input = $input.first().json.body || $input.first().json;\nreturn [{\n  json: {\n    organizationId: input.organizationId || 'org_factory',\n    deviceId: input.deviceId || 'dev_fact_01',\n    domain: 'factory',\n    metrics: input.metrics || {},\n    timestamp: input.timestamp || Date.now()\n  }\n}];"
             },
             "id": "3a3a3a3a-0003-0003-0003-000000000002",
-            "name": "Evaluate Machine",
+            "name": "Normalize Payload",
             "type": "n8n-nodes-base.code",
             "typeVersion": 2,
             "position": [
@@ -54,14 +54,14 @@
             "main": [
                 [
                     {
-                        "node": "Evaluate Machine",
+                        "node": "Normalize Payload",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "Evaluate Machine": {
+        "Normalize Payload": {
             "main": [
                 [
                     {

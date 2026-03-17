@@ -7,32 +7,123 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Organization {
+  id          String            @id
+  slug        String            @unique
+  name        String
+  description String?
+  users       User[]
+  devices     Device[]
+  metrics     Metric[]
+  dashboards  DashboardConfig[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
 model User {
-  id       String @id @default(uuid())
-  email    String @unique
-  password String
-  name     String?
-  role     String @default("user")
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  email          String
+  password       String
+  name           String?
+  role           String       @default("user")
+  createdAt      DateTime     @default(now())
+
+  @@unique([organizationId, email])
 }
 
 model Device {
-  id        String   @id @default(uuid())
-  name      String
-  type      String   // e.g., "ESP8266", "Simulator"
-  variant   String   // e.g., "home", "hospital"
-  status    String   @default("offline")
-  config    String?  // JSON string for specific config
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  logs      Log[]
+  id             String       @id
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  type           String
+  domain         String
+  status         String       @default("offline")
+  config         String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  sensorData     SensorData[]
+  alerts         Alert[]
+
+  @@index([organizationId, domain])
 }
 
-model Log {
-  id        Int      @id @default(autoincrement())
-  deviceId  String
-  device    Device   @relation(fields: [deviceId], references: [id])
-  data      String   // JSON string of the payload
-  level     String   @default("info") // info, warning, critical
-  message   String?
-  timestamp DateTime @default(now())
+model Metric {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  domain         String
+  key            String
+  label          String
+  unit           String?
+  dataType       String       @default("number")
+  min            Float?
+  max            Float?
+  widgetType     String?
+  icon           String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  threshold      Threshold?
+  sensorData     SensorData[]
+  alerts         Alert[]
+
+  @@unique([organizationId, domain, key])
+}
+
+model Threshold {
+  id            String  @id @default(uuid())
+  metricId       String  @unique
+  metric         Metric  @relation(fields: [metricId], references: [id], onDelete: Cascade)
+  warn           Float?
+  critical       Float?
+  invertWarning  Boolean @default(false)
+  valueMapping   String?
+}
+
+model SensorData {
+  id          String   @id @default(uuid())
+  deviceId    String
+  device      Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  metricId    String
+  metric      Metric   @relation(fields: [metricId], references: [id], onDelete: Cascade)
+  valueNumber Float?
+  valueText   String?
+  status      String   @default("normal")
+  timestamp   DateTime @default(now())
+
+  @@index([deviceId, timestamp])
+}
+
+model Alert {
+  id          String   @id @default(uuid())
+  organizationId String
+  deviceId    String
+  device      Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  metricId    String
+  metric      Metric   @relation(fields: [metricId], references: [id], onDelete: Cascade)
+  severity    String
+  value       Float?
+  message     String
+  resolvedAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([organizationId, severity, createdAt])
+}
+
+model DashboardConfig {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  domain         String
+  label          String
+  description    String?
+  icon           String?
+  color          String?
+  widgets        String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, domain])
 }
