@@ -1,0 +1,7 @@
+[
+  { "label": "baseline", "metrics": { "heart_rate": 76, "spo2": 98, "blood_pressure": 122 } },
+  { "label": "early_warning", "metrics": { "heart_rate": 104, "spo2": 94, "blood_pressure": 136 } },
+  { "label": "critical_drop", "metrics": { "heart_rate": 132, "spo2": 88, "blood_pressure": 162 } },
+  { "label": "intervention", "metrics": { "heart_rate": 96, "spo2": 95, "blood_pressure": 130 } },
+  { "label": "stable", "metrics": { "heart_rate": 80, "spo2": 97, "blood_pressure": 124 } }
+]

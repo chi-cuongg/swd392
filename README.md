@@ -102,15 +102,34 @@ Optional frontend env:
 ```bash
 cd simulator
 npm install
-# Tat ca variants qua n8n
-node index.js all n8n 3000
 
-# 1 variant qua n8n
-node index.js hospital n8n 3000
+# Open simulator control UI
+npm run ui
+# -> http://localhost:4060
 
-# Fallback direct vao backend
-node index.js home direct 3000
+# Deterministic demo mode (recommended)
+npm run demo
+
+# Tat ca variants qua n8n (scenario mode)
+node index.js all n8n 3000 scenario
+
+# 1 variant qua n8n (scenario mode)
+node index.js hospital n8n 3000 scenario
+
+# Fallback direct vao backend (scenario mode)
+node index.js home direct 3000 scenario
+
+# Random mode (soak test)
+node index.js all n8n 3000 random
 ```
+
+Ghi chu demo:
+- Scenario mode dung du lieu co kich ban, lap lai giong nhau qua moi lan chay.
+- Muc tieu de thuyet trinh luong normal -> warning -> critical -> recovered ro rang.
+- Neu muon thao tac bang giao dien thay vi terminal, mo Simulator UI va bam:
+  - Send once / Next step
+  - Start autoplay / Stop autoplay
+  - Reset selected scenario / Reset all scenarios
 
 ### 4. n8n (Workflow Engine)
 ```bash

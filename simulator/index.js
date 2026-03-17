@@ -1,21 +1,22 @@
+const fs = require('fs');
+const path = require('path');
 const axios = require('axios');
 
-// n8n Webhook URLs (Logic Layer)
 const N8N_BASE = process.env.N8N_URL || 'http://localhost:5678/webhook';
-// Fallback: Direct Core API (bypass n8n)
 const CORE_API = process.env.CORE_URL || 'http://localhost:3000/api/ingest';
 
-// Mode flag: 'n8n' (through n8n) or 'direct' (bypass n8n, self-evaluate)
+const mode = process.argv[2] || 'all';
 const ROUTE_MODE = process.argv[3] || 'n8n';
+const interval = parseInt(process.argv[4], 10) || 3000;
+const DATA_MODE = process.argv[5] || 'scenario';
 
-// All 5 SPLA Variants
 const VARIANTS = {
     home: {
         id: 'dev_home_01',
         organizationId: 'org_home',
         domain: 'home',
         n8nPath: '/smart-home',
-        generate: () => {
+        generateRandom: () => {
             const temp = 20 + Math.random() * 60;
             const smoke = Math.random() * 100;
             const door = Math.random() > 0.9 ? 1 : 0;
@@ -23,9 +24,9 @@ const VARIANTS = {
             return { temp: +temp.toFixed(1), smoke: +smoke.toFixed(1), door, motion };
         },
         evaluate: (m) => {
-            if (m.temp > 50 || m.smoke > 60) return { status: 'critical', message: '🔥 FIRE ALERT!' };
-            if (m.temp > 40 || m.smoke > 30) return { status: 'warning', message: '⚠️ Elevated levels.' };
-            return { status: 'normal', message: 'All clear.' };
+            if (m.temp > 50 || m.smoke > 60) return { status: 'critical', message: 'FIRE ALERT' };
+            if (m.temp > 40 || m.smoke > 30) return { status: 'warning', message: 'Elevated levels' };
+            return { status: 'normal', message: 'All clear' };
         }
     },
     hospital: {
@@ -33,16 +34,16 @@ const VARIANTS = {
         organizationId: 'org_hospital',
         domain: 'hospital',
         n8nPath: '/hospital',
-        generate: () => {
+        generateRandom: () => {
             const heart_rate = 60 + Math.floor(Math.random() * 100);
             const spo2 = 88 + Math.floor(Math.random() * 12);
             const blood_pressure = 100 + Math.floor(Math.random() * 80);
             return { heart_rate, spo2, blood_pressure };
         },
         evaluate: (m) => {
-            if (m.heart_rate > 120 || m.spo2 < 90) return { status: 'critical', message: '🚨 CRITICAL vitals!' };
-            if (m.heart_rate > 100 || m.spo2 < 95) return { status: 'warning', message: '⚠️ Vitals need attention.' };
-            return { status: 'normal', message: 'Stable.' };
+            if (m.heart_rate > 120 || m.spo2 < 90) return { status: 'critical', message: 'Critical vitals' };
+            if (m.heart_rate > 100 || m.spo2 < 95) return { status: 'warning', message: 'Vitals need attention' };
+            return { status: 'normal', message: 'Stable' };
         }
     },
     factory: {
@@ -50,16 +51,20 @@ const VARIANTS = {
         organizationId: 'org_factory',
         domain: 'factory',
         n8nPath: '/factory',
-        generate: () => {
+        generateRandom: () => {
             const machine_temp = 30 + Math.random() * 80;
             const vibration = Math.random() * 100;
             const pressure = 5 + Math.random() * 35;
-            return { machine_temp: +machine_temp.toFixed(1), vibration: +vibration.toFixed(1), pressure: +pressure.toFixed(1) };
+            return {
+                machine_temp: +machine_temp.toFixed(1),
+                vibration: +vibration.toFixed(1),
+                pressure: +pressure.toFixed(1)
+            };
         },
         evaluate: (m) => {
-            if (m.machine_temp > 90 || m.vibration > 80) return { status: 'critical', message: '🏭 Machine malfunction!' };
-            if (m.machine_temp > 70 || m.vibration > 50) return { status: 'warning', message: '⚠️ Outside norms.' };
-            return { status: 'normal', message: 'Normal.' };
+            if (m.machine_temp > 90 || m.vibration > 80) return { status: 'critical', message: 'Machine malfunction' };
+            if (m.machine_temp > 70 || m.vibration > 50) return { status: 'warning', message: 'Outside norms' };
+            return { status: 'normal', message: 'Normal' };
         }
     },
     traffic: {
@@ -67,16 +72,16 @@ const VARIANTS = {
         organizationId: 'org_traffic',
         domain: 'traffic',
         n8nPath: '/traffic',
-        generate: () => {
+        generateRandom: () => {
             const vehicle_density = Math.floor(Math.random() * 120);
             const accident = Math.random() > 0.95 ? 1 : 0;
             const congestion = vehicle_density > 90 ? 2 : vehicle_density > 60 ? 1 : 0;
             return { vehicle_density, accident, congestion };
         },
         evaluate: (m) => {
-            if (m.accident === 1) return { status: 'critical', message: '🚗 ACCIDENT!' };
-            if (m.congestion === 2) return { status: 'warning', message: '🚦 Heavy congestion.' };
-            return { status: 'normal', message: 'Normal flow.' };
+            if (m.accident === 1) return { status: 'critical', message: 'Accident detected' };
+            if (m.congestion === 2) return { status: 'warning', message: 'Heavy congestion' };
+            return { status: 'normal', message: 'Normal flow' };
         }
     },
     farm: {
@@ -84,30 +89,95 @@ const VARIANTS = {
         organizationId: 'org_farm',
         domain: 'farm',
         n8nPath: '/farm',
-        generate: () => {
+        generateRandom: () => {
             const soil_moisture = Math.random() * 100;
             const light_intensity = Math.floor(Math.random() * 1200);
             const ph = 4 + Math.random() * 6;
             return { soil_moisture: +soil_moisture.toFixed(1), light_intensity, ph: +ph.toFixed(1) };
         },
         evaluate: (m) => {
-            if (m.soil_moisture < 20 || m.ph > 9) return { status: 'critical', message: '🌾 Soil danger!' };
-            if (m.soil_moisture < 30 || m.ph > 8) return { status: 'warning', message: '⚠️ Soil needs attention.' };
-            return { status: 'normal', message: 'Optimal.' };
+            if (m.soil_moisture < 20 || m.ph > 9) return { status: 'critical', message: 'Soil danger' };
+            if (m.soil_moisture < 30 || m.ph > 8) return { status: 'warning', message: 'Soil needs attention' };
+            return { status: 'normal', message: 'Optimal' };
         }
     }
+};
+
+const scenarioCache = {};
+const scenarioState = {};
+
+const loadScenario = (variantKey) => {
+    if (scenarioCache[variantKey]) {
+        return scenarioCache[variantKey];
+    }
+
+    const filePath = path.join(__dirname, 'scenarios', `${variantKey}.json`);
+    try {
+        const fileContent = fs.readFileSync(filePath, 'utf8');
+        const scenario = JSON.parse(fileContent);
+        if (!Array.isArray(scenario) || scenario.length === 0) {
+            throw new Error('Scenario must be a non-empty array');
+        }
+        scenarioCache[variantKey] = scenario;
+        scenarioState[variantKey] = 0;
+        return scenario;
+    } catch (error) {
+        console.warn(`[${variantKey}] Could not load scenario file. Falling back to random mode. Reason: ${error.message}`);
+        scenarioCache[variantKey] = null;
+        return null;
+    }
+};
+
+const getScenarioMetrics = (variantKey) => {
+    const scenario = loadScenario(variantKey);
+    if (!scenario) {
+        return null;
+    }
+
+    const currentIndex = scenarioState[variantKey] || 0;
+    const step = scenario[currentIndex];
+    scenarioState[variantKey] = (currentIndex + 1) % scenario.length;
+
+    return {
+        metrics: step.metrics,
+        label: step.label || `step_${currentIndex + 1}`,
+        stepIndex: currentIndex + 1,
+        totalSteps: scenario.length
+    };
+};
+
+const getMetricsForVariant = (variantKey) => {
+    const variant = VARIANTS[variantKey];
+    if (!variant) {
+        return null;
+    }
+
+    if (DATA_MODE === 'scenario') {
+        const scenarioData = getScenarioMetrics(variantKey);
+        if (scenarioData) {
+            return scenarioData;
+        }
+    }
+
+    return {
+        metrics: variant.generateRandom(),
+        label: 'random',
+        stepIndex: null,
+        totalSteps: null
+    };
 };
 
 const sendData = async (variantKey) => {
     const variant = VARIANTS[variantKey];
     if (!variant) return;
 
-    const metrics = variant.generate();
+    const payloadData = getMetricsForVariant(variantKey);
+    if (!payloadData) return;
+
+    const { metrics, label, stepIndex, totalSteps } = payloadData;
+    const stepText = stepIndex ? ` [${stepIndex}/${totalSteps}] ${label}` : ` [${label}]`;
 
     if (ROUTE_MODE === 'n8n') {
-        // === Route through n8n (Production Flow) ===
-        // Simulator sends RAW data to n8n webhook riêng của từng variant
-        // → n8n evaluates → n8n POSTs to Core /api/ingest
         const payload = {
             organizationId: variant.organizationId,
             deviceId: variant.id,
@@ -119,10 +189,9 @@ const sendData = async (variantKey) => {
         const n8nUrl = `${N8N_BASE}${variant.n8nPath}`;
         try {
             await axios.post(n8nUrl, payload);
-            console.log(`📡 [${variant.domain.toUpperCase()}] → n8n (${n8nUrl})  ${JSON.stringify(metrics)}`);
+            console.log(`[${variant.domain.toUpperCase()}]${stepText} -> n8n ${JSON.stringify(metrics)}`);
         } catch (err) {
-            console.warn(`⚠️  [${variant.domain}] n8n unreachable (${err.message}), falling back to Direct...`);
-            // Fallback: gửi trực tiếp vào Core nếu n8n không chạy
+            console.warn(`[${variant.domain}]${stepText} n8n unreachable (${err.message}), fallback direct`);
             try {
                 const { status, message } = variant.evaluate(metrics);
                 await axios.post(CORE_API, {
@@ -134,15 +203,12 @@ const sendData = async (variantKey) => {
                     message,
                     timestamp: Date.now()
                 });
-                const icon = status === 'critical' ? '🔴' : status === 'warning' ? '🟡' : '🟢';
-                console.log(`${icon} [${variant.domain.toUpperCase()}] → Core (fallback)  ${JSON.stringify(metrics)} → ${status}`);
-            } catch (e2) {
-                console.error(`❌ [${variant.domain}] Core fallback also failed:`, e2.message);
+                console.log(`[${variant.domain.toUpperCase()}]${stepText} -> core fallback ${status}`);
+            } catch (fallbackError) {
+                console.error(`[${variant.domain}]${stepText} core fallback failed: ${fallbackError.message}`);
             }
         }
     } else {
-        // === Direct to Core (Demo/Fallback) ===
-        // Simulator evaluates locally and sends directly to Core
         const { status, message } = variant.evaluate(metrics);
         const payload = {
             organizationId: variant.organizationId,
@@ -156,28 +222,31 @@ const sendData = async (variantKey) => {
 
         try {
             await axios.post(CORE_API, payload);
-            const icon = status === 'critical' ? '🔴' : status === 'warning' ? '🟡' : '🟢';
-            console.log(`${icon} [${variant.domain.toUpperCase()}] → Core  ${JSON.stringify(metrics)} → ${status}`);
+            console.log(`[${variant.domain.toUpperCase()}]${stepText} -> core ${status}`);
         } catch (err) {
-            console.error(`❌ [${variant.domain}] Core Error:`, err.message);
+            console.error(`[${variant.domain}]${stepText} core error: ${err.message}`);
         }
     }
 };
 
-// CLI: node index.js [variant|all] [n8n|direct] [interval_ms]
-const mode = process.argv[2] || 'all';
-const interval = parseInt(process.argv[4]) || 3000;
+console.log('\nIoT Simulator Started');
+console.log(`  Variant: ${mode}`);
+console.log(`  Route: ${ROUTE_MODE}`);
+console.log(`  Interval: ${interval}ms`);
+console.log(`  Data mode: ${DATA_MODE}`);
+console.log(`  n8n URL: ${N8N_BASE}`);
+console.log(`  Core URL: ${CORE_API}\n`);
 
-console.log(`\n🚀 IoT Simulator Started`);
-console.log(`   Variant: ${mode}`);
-console.log(`   Route:   ${ROUTE_MODE === 'n8n' ? '📡 Simulator → n8n → Core (Production)' : '⚡ Simulator → Core (Direct)'}`);
-console.log(`   Interval: ${interval}ms`);
-console.log(`   n8n URL: ${N8N_BASE}`);
-console.log(`   Core URL: ${CORE_API}\n`);
+if (DATA_MODE !== 'scenario' && DATA_MODE !== 'random') {
+    console.error(`Invalid data mode: ${DATA_MODE}. Use "scenario" or "random".`);
+    process.exit(1);
+}
 
 setInterval(() => {
     if (mode === 'all') {
-        Object.keys(VARIANTS).forEach(k => sendData(k));
+        Object.keys(VARIANTS).forEach((key) => {
+            sendData(key);
+        });
     } else if (VARIANTS[mode]) {
         sendData(mode);
     } else {

@@ -1,0 +1,7 @@
+[
+  { "label": "baseline", "metrics": { "vehicle_density": 35, "accident": 0, "congestion": 0 } },
+  { "label": "warning_congestion", "metrics": { "vehicle_density": 92, "accident": 0, "congestion": 2 } },
+  { "label": "critical_accident", "metrics": { "vehicle_density": 104, "accident": 1, "congestion": 2 } },
+  { "label": "incident_clearance", "metrics": { "vehicle_density": 74, "accident": 0, "congestion": 1 } },
+  { "label": "normal_flow", "metrics": { "vehicle_density": 42, "accident": 0, "congestion": 0 } }
+]

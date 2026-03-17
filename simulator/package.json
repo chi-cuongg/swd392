@@ -5,19 +5,27 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js all n8n 3000",
-    "start:direct": "node index.js all direct 3000",
-    "start:home": "node index.js home n8n 3000",
-    "start:hospital": "node index.js hospital n8n 3000",
-    "start:factory": "node index.js factory n8n 3000",
-    "start:traffic": "node index.js traffic n8n 3000",
-    "start:farm": "node index.js farm n8n 3000"
+    "start": "node index.js all n8n 3000 scenario",
+    "demo": "node index.js all n8n 2500 scenario",
+    "demo:factory": "node index.js factory n8n 2500 scenario",
+    "demo:hospital": "node index.js hospital n8n 2500 scenario",
+    "start:direct": "node index.js all direct 3000 scenario",
+    "start:home": "node index.js home n8n 3000 scenario",
+    "start:hospital": "node index.js hospital n8n 3000 scenario",
+    "start:factory": "node index.js factory n8n 3000 scenario",
+    "start:traffic": "node index.js traffic n8n 3000 scenario",
+    "start:farm": "node index.js farm n8n 3000 scenario",
+    "start:random": "node index.js all n8n 3000 random",
+    "start:random:direct": "node index.js all direct 3000 random",
+    "ui": "node uiServer.js",
+    "demo:ui": "node uiServer.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "axios": "^1.13.5"
+    "axios": "^1.13.5",
+    "express": "^4.21.2"
   }
 }

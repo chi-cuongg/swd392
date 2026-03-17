@@ -1,0 +1,7 @@
+[
+  { "label": "baseline", "metrics": { "machine_temp": 48.0, "vibration": 22.0, "pressure": 14.0 } },
+  { "label": "warning_vibration", "metrics": { "machine_temp": 72.0, "vibration": 58.0, "pressure": 18.0 } },
+  { "label": "critical_overheat", "metrics": { "machine_temp": 96.0, "vibration": 86.0, "pressure": 26.0 } },
+  { "label": "cooldown", "metrics": { "machine_temp": 67.0, "vibration": 46.0, "pressure": 17.0 } },
+  { "label": "recovered", "metrics": { "machine_temp": 52.0, "vibration": 25.0, "pressure": 15.0 } }
+]
