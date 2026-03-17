@@ -50,4 +50,24 @@ router.get('/:id', async(req, res) => {
     }
 });
 
+// Update device
+router.put('/:id', async (req, res) => {
+    try {
+        const { name, description } = req.body;
+        
+        const device = await prisma.device.update({
+            where: { id: req.params.id },
+            data: { 
+                name: name !== undefined ? name : undefined,
+                description: description !== undefined ? description : undefined
+            }
+        });
+        
+        res.json(device);
+    } catch (error) {
+        console.error('Failed to update device:', error);
+        res.status(500).json({ error: 'Failed to update device' });
+    }
+});
+
 module.exports = router;

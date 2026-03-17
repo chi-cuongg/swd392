@@ -2,18 +2,46 @@ import React, { useState, useEffect } from 'react';
 import { SocketProvider } from './context/SocketContext';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
+import Login from './components/Login';
+import DeviceManager from './components/DeviceManager';
+import Settings from './components/Settings';
 import axios from 'axios';
 import './index.css';
 import { API_BASE } from './config';
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentView, setCurrentView] = useState('dashboard');
   const [organizations, setOrganizations] = useState([]);
   const [activeOrganizationId, setActiveOrganizationId] = useState('');
   const [availableVariants, setAvailableVariants] = useState([]);
   const [activeVariant, setActiveVariant] = useState('home');
   const [stats, setStats] = useState(null);
 
+  // Initialize auth state
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const handleLoginSuccess = () => {
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    delete axios.defaults.headers.common['Authorization'];
+    setIsAuthenticated(false);
+    setCurrentView('dashboard');
+  };
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
     const fetchBootstrap = async () => {
       try {
         const orgRes = await axios.get(`${API_BASE}/config/organizations`);
@@ -27,10 +55,10 @@ function App() {
       }
     };
     fetchBootstrap();
-  }, []);
+  }, [isAuthenticated]);
 
   useEffect(() => {
-    if (!activeOrganizationId) return;
+    if (!isAuthenticated || !activeOrganizationId) return;
     const fetchVariants = async () => {
       try {
         const res = await axios.get(`${API_BASE}/config/variants`, {
@@ -46,11 +74,11 @@ function App() {
       }
     };
     fetchVariants();
-  }, [activeOrganizationId]);
+  }, [isAuthenticated, activeOrganizationId]);
 
   // Fetch system stats periodically
   useEffect(() => {
-    if (!activeOrganizationId) return;
+    if (!isAuthenticated || !activeOrganizationId) return;
     const fetchStats = async () => {
       try {
         const res = await axios.get(`${API_BASE}/logs/stats`, {
@@ -64,7 +92,11 @@ function App() {
     fetchStats();
     const interval = setInterval(fetchStats, 5000);
     return () => clearInterval(interval);
-  }, [activeOrganizationId]);
+  }, [isAuthenticated, activeOrganizationId]);
+
+  if (!isAuthenticated) {
+    return <Login onLoginSuccess={handleLoginSuccess} />;
+  }
 
   return (
     <SocketProvider organizationId={activeOrganizationId} activeVariant={activeVariant}>
@@ -77,8 +109,13 @@ function App() {
           activeVariant={activeVariant}
           onVariantChange={setActiveVariant}
           stats={stats}
+          currentView={currentView}
+          onViewChange={setCurrentView}
+          onLogout={handleLogout}
         />
-        <Dashboard activeOrganizationId={activeOrganizationId} activeVariant={activeVariant} />
+        {currentView === 'dashboard' && <Dashboard activeOrganizationId={activeOrganizationId} activeVariant={activeVariant} />}
+        {currentView === 'devices' && <DeviceManager activeOrganizationId={activeOrganizationId} activeVariant={activeVariant} />}
+        {currentView === 'settings' && <Settings activeOrganizationId={activeOrganizationId} activeVariant={activeVariant} />}
       </div>
     </SocketProvider>
   );

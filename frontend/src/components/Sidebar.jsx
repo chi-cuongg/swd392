@@ -7,7 +7,10 @@ const Sidebar = ({
     variants,
     activeVariant,
     onVariantChange,
-    stats
+    stats,
+    currentView,
+    onViewChange,
+    onLogout
 }) => {
     return (
         <aside className="w-64 min-h-screen bg-dark-800 border-r border-slate-700/50 flex flex-col">
@@ -55,6 +58,43 @@ const Sidebar = ({
                 </nav>
             </div>
 
+            {/* Application Views Menu */}
+            <div className="p-4 border-t border-slate-700/50">
+                <p className="text-xs text-slate-500 uppercase tracking-wider mb-3 font-semibold">Menu</p>
+                <nav className="space-y-1">
+                    <button
+                        onClick={() => onViewChange('dashboard')}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ${currentView === 'dashboard'
+                                ? 'bg-blue-500/15 text-white border border-blue-500/30'
+                                : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                            }`}
+                    >
+                        <span>📊</span>
+                        <span className="font-medium">Dashboard</span>
+                    </button>
+                    <button
+                        onClick={() => onViewChange('devices')}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ${currentView === 'devices'
+                                ? 'bg-blue-500/15 text-white border border-blue-500/30'
+                                : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                            }`}
+                    >
+                        <span>🎛️</span>
+                        <span className="font-medium">Devices</span>
+                    </button>
+                    <button
+                        onClick={() => onViewChange('settings')}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ${currentView === 'settings'
+                                ? 'bg-blue-500/15 text-white border border-blue-500/30'
+                                : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                            }`}
+                    >
+                        <span>⚙️</span>
+                        <span className="font-medium">Settings</span>
+                    </button>
+                </nav>
+            </div>
+
             {/* Stats */}
             <div className="p-4 mt-auto border-t border-slate-700/50">
                 <p className="text-xs text-slate-500 uppercase tracking-wider mb-3 font-semibold">System</p>
@@ -74,12 +114,18 @@ const Sidebar = ({
                 </div>
             </div>
 
-            {/* Connection Status */}
-            <div className="p-4 border-t border-slate-700/50">
+            {/* Connection Status & Logout */}
+            <div className="p-4 border-t border-slate-700/50 flex justify-between items-center">
                 <div className="flex items-center gap-2 text-xs text-slate-500">
                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                     <span>Connected to Core</span>
                 </div>
+                <button 
+                    onClick={onLogout}
+                    className="text-xs text-red-400 hover:text-red-300 hover:bg-red-400/10 px-2 py-1 rounded transition-colors"
+                >
+                    Logout
+                </button>
             </div>
         </aside>
     );
