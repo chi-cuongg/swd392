@@ -15,9 +15,9 @@ const VARIANTS = {
         organizationId: 'org_home',
         domain: 'home',
         devices: [
-            { id: 'dev_home_temp_01', metricKeys: ['temp'] },
-            { id: 'dev_home_smoke_01', metricKeys: ['smoke'] },
-            { id: 'dev_home_access_01', metricKeys: ['door', 'motion'] }
+            { id: 'dev_home_temp_01', name: 'Home Temp Sensor', metricKeys: ['temp'] },
+            { id: 'dev_home_smoke_01', name: 'Home Smoke Sensor', metricKeys: ['smoke'] },
+            { id: 'dev_home_access_01', name: 'Home Access Sensor', metricKeys: ['door', 'motion'] }
         ],
         n8nPath: '/smart-home',
         generateRandom: () => {
@@ -38,9 +38,9 @@ const VARIANTS = {
         organizationId: 'org_hospital',
         domain: 'hospital',
         devices: [
-            { id: 'dev_hosp_hr_01', metricKeys: ['heart_rate'] },
-            { id: 'dev_hosp_spo2_01', metricKeys: ['spo2'] },
-            { id: 'dev_hosp_bp_01', metricKeys: ['blood_pressure'] }
+            { id: 'dev_hosp_hr_01', name: 'Hospital Heart Sensor', metricKeys: ['heart_rate'] },
+            { id: 'dev_hosp_spo2_01', name: 'Hospital SpO2 Sensor', metricKeys: ['spo2'] },
+            { id: 'dev_hosp_bp_01', name: 'Hospital BP Sensor', metricKeys: ['blood_pressure'] }
         ],
         n8nPath: '/hospital',
         generateRandom: () => {
@@ -60,9 +60,9 @@ const VARIANTS = {
         organizationId: 'org_factory',
         domain: 'factory',
         devices: [
-            { id: 'dev_fact_temp_01', metricKeys: ['machine_temp'] },
-            { id: 'dev_fact_vib_01', metricKeys: ['vibration'] },
-            { id: 'dev_fact_pressure_01', metricKeys: ['pressure'] }
+            { id: 'dev_fact_temp_01', name: 'Factory Temp Sensor', metricKeys: ['machine_temp'] },
+            { id: 'dev_fact_vib_01', name: 'Factory Vibration Sensor', metricKeys: ['vibration'] },
+            { id: 'dev_fact_pressure_01', name: 'Factory Pressure Sensor', metricKeys: ['pressure'] }
         ],
         n8nPath: '/factory',
         generateRandom: () => {
@@ -86,8 +86,8 @@ const VARIANTS = {
         organizationId: 'org_traffic',
         domain: 'traffic',
         devices: [
-            { id: 'dev_traf_density_01', metricKeys: ['vehicle_density'] },
-            { id: 'dev_traf_incident_01', metricKeys: ['accident', 'congestion'] }
+            { id: 'dev_traf_density_01', name: 'Traffic Density Sensor', metricKeys: ['vehicle_density'] },
+            { id: 'dev_traf_incident_01', name: 'Traffic Incident Sensor', metricKeys: ['accident', 'congestion'] }
         ],
         n8nPath: '/traffic',
         generateRandom: () => {
@@ -107,9 +107,9 @@ const VARIANTS = {
         organizationId: 'org_farm',
         domain: 'farm',
         devices: [
-            { id: 'dev_farm_moisture_01', metricKeys: ['soil_moisture'] },
-            { id: 'dev_farm_light_01', metricKeys: ['light_intensity'] },
-            { id: 'dev_farm_ph_01', metricKeys: ['ph'] }
+            { id: 'dev_farm_moisture_01', name: 'Farm Moisture Sensor', metricKeys: ['soil_moisture'] },
+            { id: 'dev_farm_light_01', name: 'Farm Light Sensor', metricKeys: ['light_intensity'] },
+            { id: 'dev_farm_ph_01', name: 'Farm pH Sensor', metricKeys: ['ph'] }
         ],
         n8nPath: '/farm',
         generateRandom: () => {
@@ -249,7 +249,7 @@ const buildVariantMetrics = (variantKey, dataMode, metricsOverride, consumeScena
 const splitMetricsByDevices = (variant, metrics) => {
     const devices = Array.isArray(variant.devices) && variant.devices.length > 0 ?
         variant.devices :
-        [{ id: variant.id, metricKeys: Object.keys(metrics || {}) }];
+        [{ id: variant.id, name: `Device ${variant.id}`, metricKeys: Object.keys(metrics || {}) }];
 
     const map = new Map(devices.map((device) => [device.id, {}]));
     const fallbackId = devices[0].id;
@@ -261,7 +261,7 @@ const splitMetricsByDevices = (variant, metrics) => {
     }
 
     return devices
-        .map((device) => ({ deviceId: device.id, metrics: map.get(device.id) || {} }))
+        .map((device) => ({ deviceId: device.id, deviceName: device.name || `Device ${device.id}`, metrics: map.get(device.id) || {} }))
         .filter((item) => Object.keys(item.metrics).length > 0);
 };
 
@@ -276,6 +276,7 @@ const sendVariant = async ({ variantKey, routeMode, dataMode, metricsOverride, f
     const payloads = splitMetricsByDevices(variant, payloadData.metrics).map((chunk) => ({
         organizationId: variant.organizationId,
         deviceId: chunk.deviceId,
+        deviceName: chunk.deviceName,
         domain: variant.domain,
         metrics: chunk.metrics,
         timestamp: baseTimestamp,

@@ -282,6 +282,7 @@
             <div class="btns">
                 <button id="sendOnce">Send once</button>
                 <button id="nextStep">Next step</button>
+                <button id="autoFillPayload" class="btn-primary">Auto fill custom payload</button>
                 <button id="startAuto" class="btn-primary">Start autoplay</button>
                 <button id="stopAuto" class="btn-stop">Stop autoplay</button>
                 <button id="resetOne" class="btn-muted">Reset selected scenario</button>
@@ -312,6 +313,7 @@
         const metricsEl = $('metrics');
         const sendOnceBtn = $('sendOnce');
         const nextStepBtn = $('nextStep');
+        const autoFillPayloadBtn = $('autoFillPayload');
         const startAutoBtn = $('startAuto');
         const stopAutoBtn = $('stopAuto');
         const resetOneBtn = $('resetOne');
@@ -409,6 +411,7 @@
         function updateButtons() {
             sendOnceBtn.disabled = isBusy || isRunning;
             nextStepBtn.disabled = isBusy || isRunning;
+            autoFillPayloadBtn.disabled = isBusy || isRunning;
             startAutoBtn.disabled = isBusy || isRunning;
             stopAutoBtn.disabled = isBusy || !isRunning;
             resetOneBtn.disabled = isBusy;
@@ -484,6 +487,38 @@
             await refreshState();
         }
 
+        async function autoFillCustomPayload() {
+            if (variantEl.value === 'all') {
+                throw new Error('Please choose a specific variant before auto-filling payload');
+            }
+
+            let metrics = null;
+
+            // First preference: scenario preview so values look realistic in demos.
+            try {
+                const preview = await api(`/api/preview?variant=${encodeURIComponent(variantEl.value)}`);
+                if (preview?.preview?.metrics && typeof preview.preview.metrics === 'object') {
+                    metrics = preview.preview.metrics;
+                }
+            } catch (_) {
+                // Ignore preview failure and fallback to schema-based defaults.
+            }
+
+            if (!metrics) {
+                metrics = {};
+                (currentSchema.keys || []).forEach((key) => {
+                    metrics[key] = 0;
+                });
+            }
+
+            if (!metrics || Object.keys(metrics).length === 0) {
+                throw new Error('Could not generate payload. Try restarting simulator/backend and choose a specific variant.');
+            }
+
+            useCustomEl.value = 'yes';
+            metricsEl.value = JSON.stringify(metrics, null, 2);
+        }
+
         sendOnceBtn.addEventListener('click', () => withBusy(async() => {
             try {
                 await doSend(false);
@@ -495,6 +530,14 @@
         nextStepBtn.addEventListener('click', () => withBusy(async() => {
             try {
                 await doSend(true);
+            } catch (e) {
+                alert(e.message);
+            }
+        }));
+
+        autoFillPayloadBtn.addEventListener('click', () => withBusy(async() => {
+            try {
+                await autoFillCustomPayload();
             } catch (e) {
                 alert(e.message);
             }

@@ -20,7 +20,7 @@ function mergeSeverity(current, next) {
 
 exports.ingestData = async(req, res) => {
     try {
-        const { organizationId: rawOrganizationId, deviceId, domain, metrics, status, message } = req.body;
+        const { organizationId: rawOrganizationId, deviceId, deviceName, domain, metrics, status, message } = req.body;
 
         if (!deviceId || !domain || !metrics || typeof metrics !== 'object') {
             return res.status(400).json({
@@ -68,12 +68,13 @@ exports.ingestData = async(req, res) => {
                 status: 'online',
                 domain,
                 organizationId,
+                name: deviceName || undefined,
                 updatedAt: new Date()
             },
             create: {
                 id: deviceId,
                 organizationId,
-                name: `Device ${deviceId}`,
+                name: deviceName || `Device ${deviceId}`,
                 type: 'Generic',
                 domain,
                 status: 'online'
