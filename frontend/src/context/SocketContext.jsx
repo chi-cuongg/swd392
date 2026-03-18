@@ -1,20 +1,12 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { SOCKET_URL } from '../config';
-
-const SocketContext = createContext();
-
-export const useSocket = () => useContext(SocketContext);
+import { SocketContext } from './socketContext';
 
 export const SocketProvider = ({ children, organizationId, activeVariant }) => {
-    const [socket, setSocket] = useState(null);
+    const [socket] = useState(() => io(SOCKET_URL));
 
-    useEffect(() => {
-        const newSocket = io(SOCKET_URL);
-        setSocket(newSocket);
-
-        return () => newSocket.close();
-    }, []);
+    useEffect(() => () => socket.close(), [socket]);
 
     useEffect(() => {
         if (!socket || !organizationId) return;

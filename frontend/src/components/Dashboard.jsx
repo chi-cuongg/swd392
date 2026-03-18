@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useSocket } from '../context/SocketContext';
+import { useSocket } from '../context/socketContext';
 import GaugeWidget from './GaugeWidget';
 import LineChartWidget from './LineChartWidget';
 import StatusWidget from './StatusWidget';
@@ -63,9 +63,7 @@ const renderWidget = (widget, data, history, status, config) => {
     }
 };
 
-const Dashboard = ({ activeOrganizationId, activeVariant }) => {
-    const socket = useSocket();
-    const [config, setConfig] = useState(null);
+const DashboardLive = ({ socket, activeOrganizationId, activeVariant, config }) => {
     const [data, setData] = useState({});
     const [history, setHistory] = useState({});
     const [status, setStatus] = useState('normal');
@@ -73,30 +71,9 @@ const Dashboard = ({ activeOrganizationId, activeVariant }) => {
     const [alerts, setAlerts] = useState([]);
     const [lastUpdate, setLastUpdate] = useState(null);
 
-    // Fetch variant config from backend
-    useEffect(() => {
-        if (!activeOrganizationId || !activeVariant) return;
-        const fetchConfig = async () => {
-            try {
-                const res = await axios.get(`${API_BASE}/config/variants/${activeVariant}`, {
-                    params: { organizationId: activeOrganizationId }
-                });
-                setConfig(res.data);
-            } catch (err) {
-                console.error('Failed to fetch config:', err);
-            }
-        };
-        fetchConfig();
-        // Reset data when switching
-        setData({});
-        setHistory({});
-        setStatus('normal');
-        setAlerts([]);
-    }, [activeOrganizationId, activeVariant]);
-
     // Socket listener
     useEffect(() => {
-        if (!socket) return;
+        if (!socket || !activeOrganizationId || !activeVariant) return;
 
         const handler = (payload) => {
             if (payload.organizationId !== activeOrganizationId) return;
@@ -120,24 +97,13 @@ const Dashboard = ({ activeOrganizationId, activeVariant }) => {
 
             // Track alerts
             if (payload.status === 'critical' || payload.status === 'warning') {
-                setAlerts(prev => {
-                    const newAlerts = [payload, ...prev].slice(0, 20);
-                    return newAlerts;
-                });
+                setAlerts(prev => [payload, ...prev].slice(0, 20));
             }
         };
 
         socket.on('device_update', handler);
         return () => socket.off('device_update', handler);
     }, [socket, activeOrganizationId, activeVariant]);
-
-    if (!config) {
-        return (
-            <div className="flex items-center justify-center h-full">
-                <div className="text-slate-400 text-lg animate-pulse">Loading configuration...</div>
-            </div>
-        );
-    }
 
     return (
         <div className="flex-1 p-6 overflow-y-auto">
@@ -187,6 +153,47 @@ const Dashboard = ({ activeOrganizationId, activeVariant }) => {
             {/* Alert Panel */}
             <AlertPanel alerts={alerts} />
         </div>
+    );
+};
+
+const Dashboard = ({ activeOrganizationId, activeVariant }) => {
+    const socket = useSocket();
+    const [config, setConfig] = useState(null);
+
+    // Fetch variant config from backend
+    useEffect(() => {
+        if (!activeOrganizationId || !activeVariant) return;
+        const fetchConfig = async () => {
+            try {
+                const res = await axios.get(`${API_BASE}/config/variants/${activeVariant}`, {
+                    params: { organizationId: activeOrganizationId }
+                });
+                setConfig(res.data);
+            } catch (err) {
+                console.error('Failed to fetch config:', err);
+            }
+        };
+        fetchConfig();
+    }, [activeOrganizationId, activeVariant]);
+
+    if (!config) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <div className="text-slate-400 text-lg animate-pulse">Loading configuration...</div>
+            </div>
+        );
+    }
+
+    const scopeKey = `${activeOrganizationId ?? 'unknown'}:${activeVariant ?? 'unknown'}`;
+
+    return (
+        <DashboardLive
+            key={scopeKey}
+            socket={socket}
+            activeOrganizationId={activeOrganizationId}
+            activeVariant={activeVariant}
+            config={config}
+        />
     );
 };
 

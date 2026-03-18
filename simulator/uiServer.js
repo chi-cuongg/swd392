@@ -238,17 +238,16 @@ const sendVariant = async({ variantKey, routeMode, dataMode, metricsOverride, fo
         }
     }
 
-    const evaluated = variant.evaluate(payload.metrics);
     const directPayload = {
         ...payload,
-        status: forceStatus || evaluated.status,
-        message: forceMessage || evaluated.message
+        ...(forceStatus ? { status: forceStatus } : {}),
+        ...(forceMessage ? { message: forceMessage } : {})
     };
 
     const response = await axios.post(CORE_API, directPayload);
     pushLog('info', `${variantKey} -> core (${stepText})`, {
         status: response.status,
-        severity: directPayload.status,
+        severity: response.data ? .status,
         metrics: directPayload.metrics
     });
     return {
@@ -256,7 +255,8 @@ const sendVariant = async({ variantKey, routeMode, dataMode, metricsOverride, fo
         channel: 'core',
         step: stepText,
         responseStatus: response.status,
-        payload: directPayload
+        payload: directPayload,
+        computedStatus: response.data ? .status
     };
 };
 

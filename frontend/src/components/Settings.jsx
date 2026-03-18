@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { API_BASE } from '../config';
 
@@ -8,7 +8,7 @@ const Settings = ({ organizationId, domain }) => {
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ warn: '', critical: '' });
 
-  const fetchThresholds = async () => {
+  const fetchThresholds = useCallback(async () => {
     if (!organizationId) return;
     setLoading(true);
     try {
@@ -21,11 +21,11 @@ const Settings = ({ organizationId, domain }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [organizationId, domain]);
 
   useEffect(() => {
     fetchThresholds();
-  }, [organizationId, domain]);
+  }, [fetchThresholds]);
 
   const handleEditClick = (metric) => {
     setEditingId(metric.metricId);

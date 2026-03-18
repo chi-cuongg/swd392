@@ -40,3 +40,19 @@ Hệ thống bao gồm 4 thành phần (module) cốt lõi:
 4. **Phát trực tiếp & Xử lý dữ liệu dạng luồng:** n8n nhận dữ liệu -> Core Node.js xử lý ngưỡng.
 5. **Cảnh báo tự động (Alerting):** Phát hiện bất thường từ luồng dữ liệu thời gian thực và nổi cảnh báo đỏ.
 6. **Cấu hình Ngưỡng (Threshold Control):** Cho phép người dùng tùy biến mức độ an toàn (Warn/Critical) ngay trên giao diện UI.
+
+### Bảng Use Case theo ID
+| ID | Use Case | Actor | Mo ta ngan | Man hinh/API lien quan |
+| --- | --- | --- | --- | --- |
+| UC-01 | Register Account | End User | Tao tai khoan moi bang email/mat khau. | Auth API (backend) |
+| UC-02 | Login Account | End User | Dang nhap de truy cap he thong. | Login UI, Auth API |
+| UC-03 | Reset Password | End User | Gui yeu cau doi mat khau khi quen. | Auth API (backend) |
+| UC-04 | View Dashboard | End User | Xem realtime metrics, chart, status. | Dashboard UI |
+| UC-05 | Receive Alert | End User | Nhan canh bao khi vuot nguong. | Alert panel, Socket.io |
+| UC-06 | Manage Devices | Administrator | Them/sua/xoa thong tin thiet bi. | Manage Devices UI, /devices API |
+| UC-07 | Configure Domain | Administrator | Thiet lap nguong canh bao theo domain/metric. | Configure Thresholds UI, /thresholds API |
+| UC-08 | Send Sensor Data | IoT Device/Simulator | Gui du lieu sensor vao he thong. | Simulator UI, /ingest API |
+| UC-09 | Process Data | Workflow Engine (n8n) | Xu ly va chuan hoa data truoc khi vao core. | n8n workflow |
+| UC-10 | Send Notification | Notification Service | Gui canh bao qua Email/Telegram (tuong lai). | Alert service (extension) |
+| UC-11 | Analyze Data | AI Service | Phan tich du lieu nang cao (tuong lai). | AI service (extension) |
+| UC-12 | Switch Domain | End User | Doi domain va cap nhat widget tuong ung. | Sidebar Domain selector |

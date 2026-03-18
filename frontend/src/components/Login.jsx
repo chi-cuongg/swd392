@@ -3,8 +3,10 @@ import axios from 'axios';
 import { API_BASE } from '../config';
 
 const Login = ({ onLoginSuccess }) => {
+  const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [slug, setSlug] = useState('spla'); // Default setup in bootstrap
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -15,11 +17,14 @@ const Login = ({ onLoginSuccess }) => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${API_BASE}/auth/login`, {
+      const endpoint = mode === 'register' ? 'register' : 'login';
+      const payload = {
         organizationSlug: slug,
         email,
-        password
-      });
+        password,
+        ...(mode === 'register' && name ? { name } : {})
+      };
+      const response = await axios.post(`${API_BASE}/auth/${endpoint}`, payload);
 
       const { token, user } = response.data;
       
@@ -47,7 +52,7 @@ const Login = ({ onLoginSuccess }) => {
             <span className="text-4xl text-blue-500">📡</span> SPLA Platform
           </h2>
           <p className="mt-2 text-sm text-slate-400">
-            Sign in to access your IoT Dashboard
+            {mode === 'register' ? 'Create a new account to get started' : 'Sign in to access your IoT Dashboard'}
           </p>
         </div>
         
@@ -72,6 +77,21 @@ const Login = ({ onLoginSuccess }) => {
                 placeholder="Ex: spla"
               />
             </div>
+
+            {mode === 'register' && (
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  placeholder="Your name"
+                />
+              </div>
+            )}
             
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">
@@ -108,8 +128,22 @@ const Login = ({ onLoginSuccess }) => {
             className={`w-full py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white 
               ${loading ? 'bg-blue-600/50 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'}`}
           >
-            {loading ? 'Authenticating...' : 'Sign In'}
+            {loading ? (mode === 'register' ? 'Creating account...' : 'Authenticating...') : (mode === 'register' ? 'Create Account' : 'Sign In')}
           </button>
+
+          <div className="text-center text-sm text-slate-400">
+            {mode === 'register' ? 'Already have an account?' : "Don't have an account?"}{' '}
+            <button
+              type="button"
+              onClick={() => {
+                setMode(mode === 'register' ? 'login' : 'register');
+                setError('');
+              }}
+              className="text-blue-400 hover:text-blue-300"
+            >
+              {mode === 'register' ? 'Sign in' : 'Create one'}
+            </button>
+          </div>
         </form>
       </div>
     </div>

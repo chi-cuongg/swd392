@@ -80,7 +80,7 @@ const Sidebar = ({
                             }`}
                     >
                         <span>🎛️</span>
-                        <span className="font-medium">Devices</span>
+                        <span className="font-medium">Manage Devices</span>
                     </button>
                     <button
                         onClick={() => onViewChange('settings')}
@@ -90,7 +90,7 @@ const Sidebar = ({
                             }`}
                     >
                         <span>⚙️</span>
-                        <span className="font-medium">Settings</span>
+                        <span className="font-medium">Configure Thresholds</span>
                     </button>
                 </nav>
             </div>

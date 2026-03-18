@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { API_BASE } from '../config';
 
@@ -8,7 +8,7 @@ const DeviceManager = ({ organizationId, domain }) => {
   const [editingDevice, setEditingDevice] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', description: '' });
 
-  const fetchDevices = async () => {
+  const fetchDevices = useCallback(async () => {
     if (!organizationId) return;
     setLoading(true);
     try {
@@ -21,11 +21,11 @@ const DeviceManager = ({ organizationId, domain }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [organizationId, domain]);
 
   useEffect(() => {
     fetchDevices();
-  }, [organizationId, domain]);
+  }, [fetchDevices]);
 
   const handleEditClick = (device) => {
     setEditingDevice(device.id);

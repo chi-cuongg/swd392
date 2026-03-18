@@ -114,8 +114,8 @@ function App() {
           onLogout={handleLogout}
         />
         {currentView === 'dashboard' && <Dashboard activeOrganizationId={activeOrganizationId} activeVariant={activeVariant} />}
-        {currentView === 'devices' && <DeviceManager activeOrganizationId={activeOrganizationId} activeVariant={activeVariant} />}
-        {currentView === 'settings' && <Settings activeOrganizationId={activeOrganizationId} activeVariant={activeVariant} />}
+        {currentView === 'devices' && <DeviceManager organizationId={activeOrganizationId} domain={activeVariant} />}
+        {currentView === 'settings' && <Settings organizationId={activeOrganizationId} domain={activeVariant} />}
       </div>
     </SocketProvider>
   );
