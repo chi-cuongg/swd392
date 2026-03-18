@@ -7,12 +7,18 @@ const app = express();
 const PORT = Number(process.env.SIM_UI_PORT || 4060);
 const N8N_BASE = process.env.N8N_URL || 'http://localhost:5678/webhook';
 const CORE_API = process.env.CORE_URL || 'http://localhost:3000/api/ingest';
+const CORE_BASE = process.env.CORE_BASE || CORE_API.replace(/\/api\/ingest$/, '');
 
 const VARIANTS = {
     home: {
         id: 'dev_home_01',
         organizationId: 'org_home',
         domain: 'home',
+        devices: [
+            { id: 'dev_home_temp_01', metricKeys: ['temp'] },
+            { id: 'dev_home_smoke_01', metricKeys: ['smoke'] },
+            { id: 'dev_home_access_01', metricKeys: ['door', 'motion'] }
+        ],
         n8nPath: '/smart-home',
         generateRandom: () => {
             const temp = 20 + Math.random() * 60;
@@ -31,6 +37,11 @@ const VARIANTS = {
         id: 'dev_hosp_01',
         organizationId: 'org_hospital',
         domain: 'hospital',
+        devices: [
+            { id: 'dev_hosp_hr_01', metricKeys: ['heart_rate'] },
+            { id: 'dev_hosp_spo2_01', metricKeys: ['spo2'] },
+            { id: 'dev_hosp_bp_01', metricKeys: ['blood_pressure'] }
+        ],
         n8nPath: '/hospital',
         generateRandom: () => {
             const heart_rate = 60 + Math.floor(Math.random() * 100);
@@ -48,6 +59,11 @@ const VARIANTS = {
         id: 'dev_fact_01',
         organizationId: 'org_factory',
         domain: 'factory',
+        devices: [
+            { id: 'dev_fact_temp_01', metricKeys: ['machine_temp'] },
+            { id: 'dev_fact_vib_01', metricKeys: ['vibration'] },
+            { id: 'dev_fact_pressure_01', metricKeys: ['pressure'] }
+        ],
         n8nPath: '/factory',
         generateRandom: () => {
             const machine_temp = 30 + Math.random() * 80;
@@ -69,6 +85,10 @@ const VARIANTS = {
         id: 'dev_traf_01',
         organizationId: 'org_traffic',
         domain: 'traffic',
+        devices: [
+            { id: 'dev_traf_density_01', metricKeys: ['vehicle_density'] },
+            { id: 'dev_traf_incident_01', metricKeys: ['accident', 'congestion'] }
+        ],
         n8nPath: '/traffic',
         generateRandom: () => {
             const vehicle_density = Math.floor(Math.random() * 120);
@@ -86,6 +106,11 @@ const VARIANTS = {
         id: 'dev_farm_01',
         organizationId: 'org_farm',
         domain: 'farm',
+        devices: [
+            { id: 'dev_farm_moisture_01', metricKeys: ['soil_moisture'] },
+            { id: 'dev_farm_light_01', metricKeys: ['light_intensity'] },
+            { id: 'dev_farm_ph_01', metricKeys: ['ph'] }
+        ],
         n8nPath: '/farm',
         generateRandom: () => {
             const soil_moisture = Math.random() * 100;
@@ -104,6 +129,7 @@ const VARIANTS = {
 const scenarioCache = {};
 const scenarioState = {};
 const logs = [];
+let sequenceCounter = 0;
 let timer = null;
 let autoConfig = {
     variant: 'factory',
@@ -178,6 +204,18 @@ const resetScenario = (variantKey) => {
     scenarioState[variantKey] = 0;
 };
 
+const getLocalMetricSchema = (variantKey) => {
+    const variant = VARIANTS[variantKey];
+    if (!variant) return { keys: [], aliases: {} };
+
+    const sample = variant.generateRandom();
+    return {
+        domain: variant.domain,
+        keys: Object.keys(sample || {}),
+        aliases: {}
+    };
+};
+
 const buildVariantMetrics = (variantKey, dataMode, metricsOverride, consumeScenario = true) => {
     const variant = VARIANTS[variantKey];
     if (!variant) {
@@ -208,6 +246,25 @@ const buildVariantMetrics = (variantKey, dataMode, metricsOverride, consumeScena
     };
 };
 
+const splitMetricsByDevices = (variant, metrics) => {
+    const devices = Array.isArray(variant.devices) && variant.devices.length > 0 ?
+        variant.devices :
+        [{ id: variant.id, metricKeys: Object.keys(metrics || {}) }];
+
+    const map = new Map(devices.map((device) => [device.id, {}]));
+    const fallbackId = devices[0].id;
+
+    for (const [metricKey, value] of Object.entries(metrics || {})) {
+        const owner = devices.find((device) => Array.isArray(device.metricKeys) && device.metricKeys.includes(metricKey));
+        const targetId = owner ? owner.id : fallbackId;
+        map.get(targetId)[metricKey] = value;
+    }
+
+    return devices
+        .map((device) => ({ deviceId: device.id, metrics: map.get(device.id) || {} }))
+        .filter((item) => Object.keys(item.metrics).length > 0);
+};
+
 const sendVariant = async ({ variantKey, routeMode, dataMode, metricsOverride, forceStatus, forceMessage, consumeScenario = true }) => {
     const variant = VARIANTS[variantKey];
     if (!variant) {
@@ -215,13 +272,19 @@ const sendVariant = async ({ variantKey, routeMode, dataMode, metricsOverride, f
     }
 
     const payloadData = buildVariantMetrics(variantKey, dataMode, metricsOverride, consumeScenario);
-    const payload = {
+    const baseTimestamp = Date.now();
+    const payloads = splitMetricsByDevices(variant, payloadData.metrics).map((chunk) => ({
         organizationId: variant.organizationId,
-        deviceId: variant.id,
+        deviceId: chunk.deviceId,
         domain: variant.domain,
-        metrics: payloadData.metrics,
-        timestamp: Date.now()
-    };
+        metrics: chunk.metrics,
+        timestamp: baseTimestamp,
+        sequence: ++sequenceCounter,
+        meta: {
+            source: 'simulator-ui',
+            variant: variantKey
+        }
+    }));
 
     const stepText = payloadData.stepIndex ?
         `[${payloadData.stepIndex}/${payloadData.totalSteps}] ${payloadData.label}` :
@@ -230,34 +293,46 @@ const sendVariant = async ({ variantKey, routeMode, dataMode, metricsOverride, f
     if (routeMode === 'n8n') {
         const n8nUrl = `${N8N_BASE}${variant.n8nPath}`;
         try {
-            const response = await axios.post(n8nUrl, payload);
-            pushLog('info', `${variantKey} -> n8n (${stepText})`, { status: response.status, metrics: payload.metrics });
-            return { ok: true, channel: 'n8n', step: stepText, responseStatus: response.status, payload };
+            const responses = [];
+            for (const payload of payloads) {
+                const response = await axios.post(n8nUrl, payload);
+                responses.push({ deviceId: payload.deviceId, status: response.status });
+                pushLog('info', `${variantKey}/${payload.deviceId} -> n8n (${stepText})`, {
+                    status: response.status,
+                    metrics: payload.metrics
+                });
+            }
+            return { ok: true, channel: 'n8n', step: stepText, responseStatus: 200, payloads, responses };
         } catch (err) {
             pushLog('warn', `${variantKey} n8n failed, fallback direct`, { error: err.message });
         }
     }
 
-    const directPayload = {
-        ...payload,
-        ...(forceStatus ? { status: forceStatus } : {}),
-        ...(forceMessage ? { message: forceMessage } : {})
-    };
+    const responses = [];
+    for (const payload of payloads) {
+        const directPayload = {
+            ...payload,
+            ...(forceStatus ? { status: forceStatus } : {}),
+            ...(forceMessage ? { message: forceMessage } : {})
+        };
 
-    const response = await axios.post(CORE_API, directPayload);
-    const computedStatus = response && response.data ? response.data.status : undefined;
-    pushLog('info', `${variantKey} -> core (${stepText})`, {
-        status: response.status,
-        severity: computedStatus,
-        metrics: directPayload.metrics
-    });
+        const response = await axios.post(CORE_API, directPayload);
+        const computedStatus = response && response.data ? response.data.status : undefined;
+        responses.push({ deviceId: payload.deviceId, status: response.status, computedStatus });
+        pushLog('info', `${variantKey}/${payload.deviceId} -> core (${stepText})`, {
+            status: response.status,
+            severity: computedStatus,
+            metrics: directPayload.metrics
+        });
+    }
+
     return {
         ok: true,
         channel: 'core',
         step: stepText,
-        responseStatus: response.status,
-        payload: directPayload,
-        computedStatus
+        responseStatus: 200,
+        payloads,
+        responses
     };
 };
 
@@ -447,4 +522,43 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Simulator UI running at http://localhost:${PORT}`);
     pushLog('info', 'Simulator UI booted', { port: PORT, n8n: N8N_BASE, core: CORE_API });
+});
+
+app.get('/api/metric-schema', async(req, res) => {
+    try {
+        const variant = req.query.variant || 'factory';
+        if (variant !== 'all' && !VARIANTS[variant]) {
+            return res.status(400).json({ error: 'Invalid variant' });
+        }
+
+        if (variant === 'all') {
+            const response = await axios.get(`${CORE_BASE}/api/config/metric-schema`);
+            return res.json(response.data);
+        }
+
+        const response = await axios.get(`${CORE_BASE}/api/config/metric-schema`, {
+            params: { domain: VARIANTS[variant].domain }
+        });
+        const data = response.data;
+
+        // Accept either { domain, keys, aliases } or full map by domain.
+        if (data && Array.isArray(data.keys)) {
+            return res.json(data);
+        }
+
+        const byDomain = data && typeof data === 'object' ? data[VARIANTS[variant].domain] : null;
+        if (byDomain && Array.isArray(byDomain.keys)) {
+            return res.json({
+                domain: VARIANTS[variant].domain,
+                keys: byDomain.keys,
+                aliases: byDomain.aliases || {}
+            });
+        }
+
+        return res.json(getLocalMetricSchema(variant));
+    } catch (err) {
+        // Keep simulator usable even when backend schema API is unavailable.
+        const variant = req.query.variant || 'factory';
+        return res.json(getLocalMetricSchema(variant));
+    }
 });

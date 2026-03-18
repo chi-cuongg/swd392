@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const prisma = require('../utils/prisma');
+const authMiddleware = require('../utils/authMiddleware');
+const adminMiddleware = require('../utils/adminMiddleware');
+
+router.use(authMiddleware, adminMiddleware);
 
 // Get all devices
 router.get('/', async(req, res) => {

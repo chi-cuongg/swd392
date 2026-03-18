@@ -46,6 +46,18 @@ const DeviceManager = ({ organizationId, domain }) => {
     }
   };
 
+  const formatRecentData = (device) => {
+    const latest = (device.sensorData || []).slice(0, 3);
+    if (latest.length === 0) return '-';
+
+    return latest.map((row) => {
+      const key = row.metric?.key || 'metric';
+      const value = row.valueNumber !== null && row.valueNumber !== undefined ? row.valueNumber : row.valueText;
+      const unit = row.metric?.unit || '';
+      return `${key}: ${value}${unit ? ` ${unit}` : ''}`;
+    }).join(' | ');
+  };
+
   return (
     <div className="flex-1 overflow-y-auto p-8">
       <div className="flex justify-between items-center mb-8">
@@ -67,6 +79,7 @@ const DeviceManager = ({ organizationId, domain }) => {
                 <th className="p-4 font-semibold text-slate-300">Device ID</th>
                 <th className="p-4 font-semibold text-slate-300">Name</th>
                 <th className="p-4 font-semibold text-slate-300">Description</th>
+                <th className="p-4 font-semibold text-slate-300">Recent Data</th>
                 <th className="p-4 font-semibold text-slate-300">Last Seen</th>
                 <th className="p-4 font-semibold text-slate-300 text-right">Actions</th>
               </tr>
@@ -102,6 +115,10 @@ const DeviceManager = ({ organizationId, domain }) => {
                     ) : (
                       device.description || '-'
                     )}
+                  </td>
+
+                  <td className="p-4 text-slate-400 text-xs">
+                    {formatRecentData(device)}
                   </td>
                   
                   <td className="p-4 text-slate-400">

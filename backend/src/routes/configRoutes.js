@@ -1,6 +1,24 @@
 const express = require('express');
 const router = express.Router();
 const prisma = require('../utils/prisma');
+const { getMetricSchema } = require('../config/metricSchema');
+
+router.get('/metric-schema', async(req, res) => {
+    try {
+        const { domain } = req.query;
+        if (domain) {
+            const schema = getMetricSchema(domain);
+            if (!schema.keys || schema.keys.length === 0) {
+                return res.status(404).json({ error: 'Domain schema not found' });
+            }
+            return res.json(schema);
+        }
+
+        return res.json(getMetricSchema());
+    } catch (error) {
+        return res.status(500).json({ error: 'Failed to fetch metric schema' });
+    }
+});
 
 router.get('/organizations', async(req, res) => {
     try {

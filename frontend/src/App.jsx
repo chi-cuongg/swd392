@@ -11,6 +11,7 @@ import { API_BASE } from './config';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const [currentView, setCurrentView] = useState('dashboard');
   const [organizations, setOrganizations] = useState([]);
   const [activeOrganizationId, setActiveOrganizationId] = useState('');
@@ -21,6 +22,14 @@ function App() {
   // Initialize auth state
   useEffect(() => {
     const token = localStorage.getItem('token');
+    const rawUser = localStorage.getItem('user');
+    if (rawUser) {
+      try {
+        setCurrentUser(JSON.parse(rawUser));
+      } catch (err) {
+        setCurrentUser(null);
+      }
+    }
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       setIsAuthenticated(true);
@@ -28,6 +37,14 @@ function App() {
   }, []);
 
   const handleLoginSuccess = () => {
+    const rawUser = localStorage.getItem('user');
+    if (rawUser) {
+      try {
+        setCurrentUser(JSON.parse(rawUser));
+      } catch (err) {
+        setCurrentUser(null);
+      }
+    }
     setIsAuthenticated(true);
   };
 
@@ -36,8 +53,17 @@ function App() {
     localStorage.removeItem('user');
     delete axios.defaults.headers.common['Authorization'];
     setIsAuthenticated(false);
+    setCurrentUser(null);
     setCurrentView('dashboard');
   };
+
+  const isAdmin = currentUser?.role === 'admin';
+
+  useEffect(() => {
+    if (!isAdmin && currentView !== 'dashboard') {
+      setCurrentView('dashboard');
+    }
+  }, [isAdmin, currentView]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -115,11 +141,12 @@ function App() {
           stats={stats}
           currentView={currentView}
           onViewChange={setCurrentView}
+          isAdmin={isAdmin}
           onLogout={handleLogout}
         />
         {currentView === 'dashboard' && <Dashboard activeOrganizationId={activeOrganizationId} activeVariant={activeVariant} />}
-        {currentView === 'devices' && <DeviceManager organizationId={activeOrganizationId} domain={activeVariant} />}
-        {currentView === 'settings' && <Settings organizationId={activeOrganizationId} domain={activeVariant} />}
+        {isAdmin && currentView === 'devices' && <DeviceManager organizationId={activeOrganizationId} domain={activeVariant} />}
+        {isAdmin && currentView === 'settings' && <Settings organizationId={activeOrganizationId} domain={activeVariant} />}
       </div>
     </SocketProvider>
   );

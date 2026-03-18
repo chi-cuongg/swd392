@@ -40,7 +40,7 @@ Hãy chắc chắn bạn đã chạy đồng thời 4 thành phần sau trên 4 
 ### Bước 1: Giới thiệu & UC-Login (1 phút)
 - **Hành động:** Trình chiếu web ở trang Login (`http://localhost:5173`).
 - **Lời thoại:** "Chào thầy/cô, nhóm em xin demo dự án Hệ thống giám sát IoT Đa miền. Trước tiên để đảm bảo bảo mật, em xin phép Đăng nhập vào hệ thống dưới quyền Quản trị viên."
-- **Nhập:** Email: `admin@spla.io` | Mật khẩu: `admin123` -> Bấm Login.
+- **Nhập:** Organization Slug: `home` | Email: `admin@spla.local` | Mật khẩu: `admin123` -> Bấm Login.
 
 ### Bước 2: UC-View Dashboard & Đổi Domain (1 phút)
 - **Hành động:** Trỏ chuột vào các thành phần trên Sidebar và các biểu đồ Gauge, Line Chart trên màn hình. Sau đó bấm đổi Domain từ *Smart Home* sang *Factory* (ở menu bên trái).

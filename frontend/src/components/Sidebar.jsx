@@ -10,6 +10,7 @@ const Sidebar = ({
     stats,
     currentView,
     onViewChange,
+    isAdmin,
     onLogout
 }) => {
     return (
@@ -72,26 +73,30 @@ const Sidebar = ({
                         <span>📊</span>
                         <span className="font-medium">Dashboard</span>
                     </button>
-                    <button
-                        onClick={() => onViewChange('devices')}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ${currentView === 'devices'
-                                ? 'bg-blue-500/15 text-white border border-blue-500/30'
-                                : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
-                            }`}
-                    >
-                        <span>🎛️</span>
-                        <span className="font-medium">Manage Devices</span>
-                    </button>
-                    <button
-                        onClick={() => onViewChange('settings')}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ${currentView === 'settings'
-                                ? 'bg-blue-500/15 text-white border border-blue-500/30'
-                                : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
-                            }`}
-                    >
-                        <span>⚙️</span>
-                        <span className="font-medium">Configure Thresholds</span>
-                    </button>
+                    {isAdmin && (
+                        <button
+                            onClick={() => onViewChange('devices')}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ${currentView === 'devices'
+                                    ? 'bg-blue-500/15 text-white border border-blue-500/30'
+                                    : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                                }`}
+                        >
+                            <span>🎛️</span>
+                            <span className="font-medium">Manage Devices</span>
+                        </button>
+                    )}
+                    {isAdmin && (
+                        <button
+                            onClick={() => onViewChange('settings')}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 ${currentView === 'settings'
+                                    ? 'bg-blue-500/15 text-white border border-blue-500/30'
+                                    : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                                }`}
+                        >
+                            <span>⚙️</span>
+                            <span className="font-medium">Configure Thresholds</span>
+                        </button>
+                    )}
                 </nav>
             </div>
 

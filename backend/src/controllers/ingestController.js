@@ -1,4 +1,5 @@
 const prisma = require('../utils/prisma');
+const { DOMAIN_METRIC_KEYS, normalizeMetricKey } = require('../config/metricSchema');
 
 function evaluateSeverity(value, threshold) {
     if (!threshold || typeof value !== 'number') return 'normal';
@@ -36,6 +37,31 @@ exports.ingestData = async(req, res) => {
         }
         const organizationId = organization.id;
 
+        const normalizedMetrics = {};
+        const invalidMetricKeys = [];
+        for (const [rawKey, metricValue] of Object.entries(metrics)) {
+            const canonicalKey = normalizeMetricKey(domain, rawKey);
+            if (!canonicalKey) {
+                invalidMetricKeys.push(rawKey);
+                continue;
+            }
+            normalizedMetrics[canonicalKey] = metricValue;
+        }
+
+        if (invalidMetricKeys.length > 0) {
+            const allowed = Array.from(DOMAIN_METRIC_KEYS[domain] || []);
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid metric key(s) for domain',
+                invalidMetricKeys,
+                allowedMetricKeys: allowed
+            });
+        }
+
+        if (Object.keys(normalizedMetrics).length === 0) {
+            return res.status(400).json({ success: false, error: 'No valid metrics after normalization' });
+        }
+
         const device = await prisma.device.upsert({
             where: { id: deviceId },
             update: {
@@ -56,7 +82,7 @@ exports.ingestData = async(req, res) => {
 
         let overallStatus = status || 'normal';
         const createdAlerts = [];
-        const metricEntries = Object.entries(metrics);
+        const metricEntries = Object.entries(normalizedMetrics);
 
         for (const [metricKey, metricRawValue] of metricEntries) {
             const valueNumber = typeof metricRawValue === 'number' ? metricRawValue : Number(metricRawValue);
@@ -116,7 +142,7 @@ exports.ingestData = async(req, res) => {
             organizationId,
             deviceId,
             domain,
-            metrics,
+            metrics: normalizedMetrics,
             status: overallStatus,
             message: message || '',
             timestamp: new Date().toISOString()

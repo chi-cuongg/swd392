@@ -189,6 +189,28 @@
             font-size: 13px;
             margin-top: 8px;
         }
+
+        .schema-box {
+            margin-top: 12px;
+            border: 1px dashed var(--line);
+            border-radius: 10px;
+            padding: 10px;
+            background: #0c1731;
+        }
+
+        .schema-title {
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .schema-line {
+            font-size: 13px;
+            color: #bfd3ff;
+            margin: 2px 0;
+            font-family: Consolas, "Courier New", monospace;
+            word-break: break-word;
+        }
     </style>
 </head>
 
@@ -251,6 +273,12 @@
             <label for="metrics">Metrics payload (only used when Custom metrics = Yes)</label>
             <textarea id="metrics" placeholder='{"machine_temp": 95, "vibration": 86, "pressure": 26}'></textarea>
 
+            <div class="schema-box">
+                <div class="schema-title">Metric schema guidance</div>
+                <div id="schemaKeys" class="schema-line">Allowed keys: loading...</div>
+                <div id="schemaAliases" class="schema-line">Aliases: loading...</div>
+            </div>
+
             <div class="btns">
                 <button id="sendOnce">Send once</button>
                 <button id="nextStep">Next step</button>
@@ -288,9 +316,15 @@
         const stopAutoBtn = $('stopAuto');
         const resetOneBtn = $('resetOne');
         const resetAllBtn = $('resetAll');
+        const schemaKeysEl = $('schemaKeys');
+        const schemaAliasesEl = $('schemaAliases');
 
         let isBusy = false;
         let isRunning = false;
+        let currentSchema = {
+            keys: [],
+            aliases: {}
+        };
 
         async function api(path, method = 'GET', body) {
             const res = await fetch(path, {
@@ -331,6 +365,35 @@
                 return;
             }
             previewEl.textContent = `preview: ${variantEl.value} [${p.preview.stepIndex}/${p.preview.totalSteps}] ${p.preview.label}`;
+        }
+
+        function renderSchema(schema) {
+            const keys = Array.isArray(schema?.keys) ? schema.keys : [];
+            const aliases = schema?.aliases && typeof schema.aliases === 'object' ? schema.aliases : {};
+            currentSchema = { keys, aliases };
+
+            schemaKeysEl.textContent = `Allowed keys: ${keys.length ? keys.join(', ') : '(no keys found)'}`;
+
+            const aliasPairs = Object.entries(aliases).map(([k, v]) => `${k} -> ${v}`);
+            schemaAliasesEl.textContent = `Aliases: ${aliasPairs.length ? aliasPairs.join(', ') : '(none)'}`;
+        }
+
+        async function refreshSchema() {
+            if (variantEl.value === 'all') {
+                renderSchema({ keys: [], aliases: {} });
+                schemaKeysEl.textContent = 'Allowed keys: choose a specific variant to view schema';
+                schemaAliasesEl.textContent = 'Aliases: choose a specific variant to view schema';
+                return;
+            }
+
+            try {
+                const schema = await api(`/api/metric-schema?variant=${encodeURIComponent(variantEl.value)}`);
+                renderSchema(schema);
+            } catch (e) {
+                renderSchema({ keys: [], aliases: {} });
+                schemaKeysEl.textContent = 'Allowed keys: failed to load schema';
+                schemaAliasesEl.textContent = `Aliases: ${e.message}`;
+            }
         }
 
         async function refreshState() {
@@ -383,6 +446,24 @@
                     throw new Error('Metrics JSON is empty');
                 }
                 metrics = JSON.parse(raw);
+
+                if (!metrics || typeof metrics !== 'object' || Array.isArray(metrics)) {
+                    throw new Error('Metrics JSON must be an object, e.g. {"machine_temp": 95}');
+                }
+
+                const keys = Object.keys(metrics);
+                if (keys.length === 0) {
+                    throw new Error('Metrics JSON has no keys');
+                }
+
+                if (currentSchema.keys.length > 0) {
+                    const validSet = new Set(currentSchema.keys);
+                    const aliasSet = new Set(Object.keys(currentSchema.aliases || {}));
+                    const invalid = keys.filter((k) => !validSet.has(k) && !aliasSet.has(k));
+                    if (invalid.length > 0) {
+                        throw new Error(`Invalid metric key(s): ${invalid.join(', ')}`);
+                    }
+                }
             }
             return {
                 variant: variantEl.value,
@@ -460,12 +541,16 @@
             }
         }));
 
-        variantEl.addEventListener('change', refreshPreview);
+        variantEl.addEventListener('change', async() => {
+            await refreshPreview();
+            await refreshSchema();
+        });
 
         async function boot() {
             await loadVariants();
             updateButtons();
             await refreshState();
+            await refreshSchema();
             setInterval(refreshState, 2000);
         }
 

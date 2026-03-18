@@ -70,6 +70,9 @@ const DashboardLive = ({ socket, activeOrganizationId, activeVariant, config }) 
     const [message, setMessage] = useState('');
     const [alerts, setAlerts] = useState([]);
     const [lastUpdate, setLastUpdate] = useState(null);
+    const [lastDeviceId, setLastDeviceId] = useState(null);
+    const [lastDeviceName, setLastDeviceName] = useState(null);
+    const [metricSource, setMetricSource] = useState({});
 
     useEffect(() => {
         if (!activeOrganizationId || !activeVariant) return;
@@ -91,6 +94,7 @@ const DashboardLive = ({ socket, activeOrganizationId, activeVariant, config }) 
 
                 const latestByMetric = {};
                 const historyByMetric = {};
+                const sourceByMetric = {};
                 let mergedStatus = 'normal';
 
                 for (const row of logs) {
@@ -102,6 +106,7 @@ const DashboardLive = ({ socket, activeOrganizationId, activeVariant, config }) 
 
                     if (!latestByMetric[key]) {
                         latestByMetric[key] = value;
+                        sourceByMetric[key] = row?.device?.name || row?.deviceId || null;
                     }
 
                     if (!historyByMetric[key]) {
@@ -124,6 +129,9 @@ const DashboardLive = ({ socket, activeOrganizationId, activeVariant, config }) 
                     setHistory(historyByMetric);
                     setStatus(mergedStatus);
                     setLastUpdate(new Date(logs[0].timestamp));
+                    setLastDeviceId(logs[0].deviceId || null);
+                    setLastDeviceName(logs[0]?.device?.name || null);
+                    setMetricSource(sourceByMetric);
                 }
             } catch (err) {
                 console.error('Failed to load latest logs:', err);
@@ -144,10 +152,19 @@ const DashboardLive = ({ socket, activeOrganizationId, activeVariant, config }) 
             if (payload.organizationId !== activeOrganizationId) return;
             if (payload.domain !== activeVariant) return;
 
-            setData(payload.metrics);
+            setData(prev => ({ ...prev, ...payload.metrics }));
             setStatus(payload.status);
             setMessage(payload.message);
             setLastUpdate(new Date(payload.timestamp));
+            setLastDeviceId(payload.deviceId || null);
+            setLastDeviceName(null);
+            setMetricSource(prev => {
+                const next = { ...prev };
+                Object.keys(payload.metrics || {}).forEach((key) => {
+                    next[key] = payload.deviceId;
+                });
+                return next;
+            });
 
             // Update history
             setHistory(prev => {
@@ -177,6 +194,19 @@ const DashboardLive = ({ socket, activeOrganizationId, activeVariant, config }) 
                 <div>
                     <h2 className="text-2xl font-bold text-white">{config.label}</h2>
                     <p className="text-sm text-slate-400 mt-1">{config.description}</p>
+                    {(lastDeviceId || lastDeviceName) && (
+                        <p className="text-xs text-slate-500 mt-1">
+                            Source device: {lastDeviceName || lastDeviceId}
+                            {lastDeviceName && lastDeviceId ? ` (${lastDeviceId})` : ''}
+                        </p>
+                    )}
+                    {Object.keys(metricSource).length > 0 && (
+                        <p className="text-[11px] text-slate-500 mt-1">
+                            Metric sources: {Object.entries(metricSource)
+                                .map(([key, source]) => `${key}: ${source}`)
+                                .join(' | ')}
+                        </p>
+                    )}
                 </div>
                 <div className="flex items-center gap-4">
                     {lastUpdate && (
