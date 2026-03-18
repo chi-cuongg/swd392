@@ -178,7 +178,7 @@ const resetScenario = (variantKey) => {
     scenarioState[variantKey] = 0;
 };
 
-const buildVariantMetrics = (variantKey, dataMode, metricsOverride) => {
+const buildVariantMetrics = (variantKey, dataMode, metricsOverride, consumeScenario = true) => {
     const variant = VARIANTS[variantKey];
     if (!variant) {
         throw new Error(`Unknown variant: ${variantKey}`);
@@ -194,7 +194,7 @@ const buildVariantMetrics = (variantKey, dataMode, metricsOverride) => {
     }
 
     if (dataMode === 'scenario') {
-        const step = getScenarioStep(variantKey, true);
+        const step = getScenarioStep(variantKey, consumeScenario);
         if (step) {
             return step;
         }
@@ -208,13 +208,13 @@ const buildVariantMetrics = (variantKey, dataMode, metricsOverride) => {
     };
 };
 
-const sendVariant = async ({ variantKey, routeMode, dataMode, metricsOverride, forceStatus, forceMessage }) => {
+const sendVariant = async ({ variantKey, routeMode, dataMode, metricsOverride, forceStatus, forceMessage, consumeScenario = true }) => {
     const variant = VARIANTS[variantKey];
     if (!variant) {
         throw new Error(`Unknown variant: ${variantKey}`);
     }
 
-    const payloadData = buildVariantMetrics(variantKey, dataMode, metricsOverride);
+    const payloadData = buildVariantMetrics(variantKey, dataMode, metricsOverride, consumeScenario);
     const payload = {
         organizationId: variant.organizationId,
         deviceId: variant.id,
@@ -261,7 +261,7 @@ const sendVariant = async ({ variantKey, routeMode, dataMode, metricsOverride, f
     };
 };
 
-const sendOnce = async ({ variant, routeMode, dataMode, metricsOverride, forceStatus, forceMessage }) => {
+const sendOnce = async ({ variant, routeMode, dataMode, metricsOverride, forceStatus, forceMessage, consumeScenario = true }) => {
     if (variant === 'all') {
         const results = [];
         for (const key of Object.keys(VARIANTS)) {
@@ -271,7 +271,8 @@ const sendOnce = async ({ variant, routeMode, dataMode, metricsOverride, forceSt
                 dataMode,
                 metricsOverride: null,
                 forceStatus,
-                forceMessage
+                forceMessage,
+                consumeScenario
             });
             results.push({ variant: key, ...result });
         }
@@ -284,7 +285,8 @@ const sendOnce = async ({ variant, routeMode, dataMode, metricsOverride, forceSt
         dataMode,
         metricsOverride,
         forceStatus,
-        forceMessage
+        forceMessage,
+        consumeScenario
     });
 
     return { mode: 'single', variant, result };
@@ -364,7 +366,8 @@ app.post('/api/send', async (req, res) => {
         dataMode = 'scenario',
         metrics = null,
         forceStatus = null,
-        forceMessage = null
+            forceMessage = null,
+            consumeScenario = true
     } = req.body || {};
 
     if (routeMode !== 'n8n' && routeMode !== 'direct') {
@@ -384,7 +387,8 @@ app.post('/api/send', async (req, res) => {
             dataMode,
             metricsOverride: metrics,
             forceStatus,
-            forceMessage
+            forceMessage,
+            consumeScenario: Boolean(consumeScenario)
         });
         return res.json({ ok: true, result });
     } catch (err) {

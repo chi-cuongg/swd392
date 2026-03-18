@@ -15,7 +15,7 @@ function App() {
   const [organizations, setOrganizations] = useState([]);
   const [activeOrganizationId, setActiveOrganizationId] = useState('');
   const [availableVariants, setAvailableVariants] = useState([]);
-  const [activeVariant, setActiveVariant] = useState('home');
+  const [activeVariant, setActiveVariant] = useState('');
   const [stats, setStats] = useState(null);
 
   // Initialize auth state
@@ -59,6 +59,8 @@ function App() {
 
   useEffect(() => {
     if (!isAuthenticated || !activeOrganizationId) return;
+    setAvailableVariants([]);
+    setActiveVariant('');
     const fetchVariants = async () => {
       try {
         const res = await axios.get(`${API_BASE}/config/variants`, {
@@ -70,6 +72,8 @@ function App() {
           setActiveVariant(variants[0].id);
         }
       } catch (err) {
+        setAvailableVariants([]);
+        setActiveVariant('');
         // Ignore bootstrap failures
       }
     };

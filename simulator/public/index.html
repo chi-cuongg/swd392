@@ -394,15 +394,18 @@
             };
         }
 
-        async function doSend() {
-            const payload = buildPayload();
+        async function doSend(consumeScenario = true) {
+            const payload = {
+                ...buildPayload(),
+                consumeScenario
+            };
             await api('/api/send', 'POST', payload);
             await refreshState();
         }
 
         sendOnceBtn.addEventListener('click', () => withBusy(async() => {
             try {
-                await doSend();
+                await doSend(false);
             } catch (e) {
                 alert(e.message);
             }
@@ -410,7 +413,7 @@
 
         nextStepBtn.addEventListener('click', () => withBusy(async() => {
             try {
-                await doSend();
+                await doSend(true);
             } catch (e) {
                 alert(e.message);
             }

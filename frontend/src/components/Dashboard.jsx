@@ -71,6 +71,71 @@ const DashboardLive = ({ socket, activeOrganizationId, activeVariant, config }) 
     const [alerts, setAlerts] = useState([]);
     const [lastUpdate, setLastUpdate] = useState(null);
 
+    useEffect(() => {
+        if (!activeOrganizationId || !activeVariant) return;
+
+        const severityRank = { normal: 0, warning: 1, critical: 2 };
+
+        const loadLatestFromLogs = async () => {
+            try {
+                const res = await axios.get(`${API_BASE}/logs`, {
+                    params: {
+                        organizationId: activeOrganizationId,
+                        domain: activeVariant,
+                        limit: 120
+                    }
+                });
+
+                const logs = Array.isArray(res.data) ? res.data : [];
+                if (logs.length === 0) return;
+
+                const latestByMetric = {};
+                const historyByMetric = {};
+                let mergedStatus = 'normal';
+
+                for (const row of logs) {
+                    const key = row?.metric?.key;
+                    if (!key) continue;
+
+                    const value = typeof row.valueNumber === 'number' ? row.valueNumber : null;
+                    if (value === null) continue;
+
+                    if (!latestByMetric[key]) {
+                        latestByMetric[key] = value;
+                    }
+
+                    if (!historyByMetric[key]) {
+                        historyByMetric[key] = [];
+                    }
+                    historyByMetric[key].push({ timestamp: row.timestamp, value });
+
+                    const rowStatus = row.status || 'normal';
+                    if (severityRank[rowStatus] > severityRank[mergedStatus]) {
+                        mergedStatus = rowStatus;
+                    }
+                }
+
+                Object.keys(historyByMetric).forEach((key) => {
+                    historyByMetric[key] = historyByMetric[key].reverse().slice(-30);
+                });
+
+                if (Object.keys(latestByMetric).length > 0) {
+                    setData(latestByMetric);
+                    setHistory(historyByMetric);
+                    setStatus(mergedStatus);
+                    setLastUpdate(new Date(logs[0].timestamp));
+                }
+            } catch (err) {
+                console.error('Failed to load latest logs:', err);
+            }
+        };
+
+        loadLatestFromLogs();
+        const interval = setInterval(loadLatestFromLogs, 4000);
+
+        return () => clearInterval(interval);
+    }, [activeOrganizationId, activeVariant]);
+
     // Socket listener
     useEffect(() => {
         if (!socket || !activeOrganizationId || !activeVariant) return;
@@ -162,18 +227,27 @@ const Dashboard = ({ activeOrganizationId, activeVariant }) => {
 
     // Fetch variant config from backend
     useEffect(() => {
+        setConfig(null);
         if (!activeOrganizationId || !activeVariant) return;
+
+        let isMounted = true;
         const fetchConfig = async () => {
             try {
                 const res = await axios.get(`${API_BASE}/config/variants/${activeVariant}`, {
                     params: { organizationId: activeOrganizationId }
                 });
-                setConfig(res.data);
+                if (isMounted) {
+                    setConfig(res.data);
+                }
             } catch (err) {
                 console.error('Failed to fetch config:', err);
             }
         };
         fetchConfig();
+
+        return () => {
+            isMounted = false;
+        };
     }, [activeOrganizationId, activeVariant]);
 
     if (!config) {
