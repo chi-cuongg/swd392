@@ -19,25 +19,25 @@ timeout /t 2 /nobreak >nul
 echo.
 echo [2/5] Khoi dong n8n (Docker)...
 pushd "%~dp0n8n"
-start "SPLA - n8n Docker" cmd /c "start cmd /c cd n8n && docker-compose up -d"
+start "SPLA - n8n Docker" cmd /c "docker-compose up -d && echo n8n da duoc khoi dong ngam tren Docker! Ban co the tat cua so nay. && timeout /t 3 >nul"
 popd
 
 echo.
 echo [3/5] Khoi dong Backend (Port 3000)...
 pushd "%~dp0backend"
-start "SPLA - Backend Core (Port 3000)" cmd /k "start cmd /c cd backend && npm run dev"
+start "SPLA - Backend Core (Port 3000)" cmd /k "npm run dev"
 popd
 
 echo.
 echo [4/5] Khoi dong Frontend Dashboard (Port 5173)...
 pushd "%~dp0frontend"
-start "SPLA - Frontend (Port 5173)" cmd /k "start cmd /c cd frontend && npm run dev"
+start "SPLA - Frontend (Port 5173)" cmd /k "npm run dev"
 popd
 
 echo.
 echo [5/5] Khoi dong Simulator UI (Port 4060)...
 pushd "%~dp0simulator"
-start "SPLA - Simulator UI (Port 4060)" cmd /k "start cmd /c cd simulator && npm run ui"
+start "SPLA - Simulator UI (Port 4060)" cmd /k "npm run ui"
 popd
 
 echo.
