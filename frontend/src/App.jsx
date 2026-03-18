@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SocketProvider } from './context/SocketContext';
+import { SocketProvider } from './context/SocketContext.jsx';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import Login from './components/Login';

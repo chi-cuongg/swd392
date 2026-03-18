@@ -208,7 +208,7 @@ const buildVariantMetrics = (variantKey, dataMode, metricsOverride) => {
     };
 };
 
-const sendVariant = async({ variantKey, routeMode, dataMode, metricsOverride, forceStatus, forceMessage }) => {
+const sendVariant = async ({ variantKey, routeMode, dataMode, metricsOverride, forceStatus, forceMessage }) => {
     const variant = VARIANTS[variantKey];
     if (!variant) {
         throw new Error(`Unknown variant: ${variantKey}`);
@@ -245,9 +245,10 @@ const sendVariant = async({ variantKey, routeMode, dataMode, metricsOverride, fo
     };
 
     const response = await axios.post(CORE_API, directPayload);
+    const computedStatus = response && response.data ? response.data.status : undefined;
     pushLog('info', `${variantKey} -> core (${stepText})`, {
         status: response.status,
-        severity: response.data ? .status,
+        severity: computedStatus,
         metrics: directPayload.metrics
     });
     return {
@@ -256,11 +257,11 @@ const sendVariant = async({ variantKey, routeMode, dataMode, metricsOverride, fo
         step: stepText,
         responseStatus: response.status,
         payload: directPayload,
-        computedStatus: response.data ? .status
+        computedStatus
     };
 };
 
-const sendOnce = async({ variant, routeMode, dataMode, metricsOverride, forceStatus, forceMessage }) => {
+const sendOnce = async ({ variant, routeMode, dataMode, metricsOverride, forceStatus, forceMessage }) => {
     if (variant === 'all') {
         const results = [];
         for (const key of Object.keys(VARIANTS)) {
@@ -356,14 +357,14 @@ app.get('/api/state', (req, res) => {
     });
 });
 
-app.post('/api/send', async(req, res) => {
+app.post('/api/send', async (req, res) => {
     const {
         variant = 'factory',
-            routeMode = 'n8n',
-            dataMode = 'scenario',
-            metrics = null,
-            forceStatus = null,
-            forceMessage = null
+        routeMode = 'n8n',
+        dataMode = 'scenario',
+        metrics = null,
+        forceStatus = null,
+        forceMessage = null
     } = req.body || {};
 
     if (routeMode !== 'n8n' && routeMode !== 'direct') {
@@ -395,9 +396,9 @@ app.post('/api/send', async(req, res) => {
 app.post('/api/start', (req, res) => {
     const {
         variant = 'factory',
-            routeMode = 'n8n',
-            dataMode = 'scenario',
-            intervalMs = 2500
+        routeMode = 'n8n',
+        dataMode = 'scenario',
+        intervalMs = 2500
     } = req.body || {};
 
     if (variant !== 'all' && !VARIANTS[variant]) {
