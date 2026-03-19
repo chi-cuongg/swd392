@@ -34,15 +34,27 @@ class ConfigService {
      * Get all dashboard variants/configs from domains
      */
     async getVariants(organizationId) {
-        const variants = getAllDomains();
+        const where = organizationId ? { organizationId } : {};
+        const variants = await prisma.dashboardConfig.findMany({
+            where,
+            select: {
+                domain: true,
+                label: true,
+                description: true,
+                icon: true,
+                color: true,
+                organizationId: true
+            },
+            orderBy: { domain: 'asc' }
+        });
         
         return Object.values(variants).map(v => ({
-            id: v.id,
+            id: v.domain,
             label: v.label,
             description: v.description,
             icon: v.icon,
             color: v.color,
-            organizationId: organizationId
+            organizationId: v.organizationId
         }));
     }
 
