@@ -221,10 +221,12 @@ class AuthService {
         }
 
         const hashed = await bcrypt.hash(newPassword, 10);
-        await prisma.user.update({
+        console.log(`[DEBUG] Updating password for userId: ${userId} (User Reset)`);
+        const updated = await prisma.user.update({
             where: { id: userId },
             data: { password: hashed }
         });
+        console.log(`[DEBUG] Update result for ${userId}: ${updated ? 'Success' : 'Failed'}`);
 
         return { success: true };
     }
@@ -256,10 +258,12 @@ class AuthService {
         }
 
         const hashed = await bcrypt.hash(newPassword, 10);
-        await prisma.user.update({
+        console.log(`[DEBUG] Updating password for userId: ${targetUserId} (Admin Reset)`);
+        const updated = await prisma.user.update({
             where: { id: targetUserId },
             data: { password: hashed }
         });
+        console.log(`[DEBUG] Admin Update result for ${targetUserId}: ${updated ? 'Success' : 'Failed'}`);
 
         return { success: true, id: targetUserId };
     }
@@ -267,14 +271,27 @@ class AuthService {
     /**
      * Request a password reset email
      */
-    async requestPasswordReset(email) {
+    async requestPasswordReset(email, organizationSlug) {
         if (!email) throw { status: 400, message: 'Email is required' };
         
         const normalizedEmail = String(email).trim().toLowerCase();
-        const user = await prisma.user.findFirst({ where: { email: normalizedEmail } });
+        const normalizedSlug = String(organizationSlug || '').trim();
+
+        // Find organization
+        let organization = null;
+        if (normalizedSlug) {
+            organization = await prisma.organization.findUnique({ where: { slug: normalizedSlug } });
+        }
+
+        const user = await prisma.user.findFirst({ 
+            where: { 
+                email: normalizedEmail,
+                ...(organization ? { organizationId: organization.id } : {})
+            } 
+        });
         
         // Always return success even if user not found to prevent email enumeration
-        if (!user) return { success: true, message: 'If email exists, a reset link was sent.' };
+        if (!user) return { success: true, message: 'If credentials match, a reset link was sent.' };
 
         // Generate token and expiry (1 hour)
         const resetToken = crypto.randomBytes(32).toString('hex');
@@ -320,6 +337,7 @@ class AuthService {
         }
 
         const hashed = await bcrypt.hash(newPassword, 10);
+        console.log(`[DEBUG] Updating password for userId: ${user.id} (Token Reset)`);
 
         await prisma.user.update({
             where: { id: user.id },
@@ -329,6 +347,7 @@ class AuthService {
                 resetTokenExpires: null
             }
         });
+        console.log(`[DEBUG] Token Update result for ${user.id}: Success`);
 
         return { success: true, message: 'Password has been reset' };
     }

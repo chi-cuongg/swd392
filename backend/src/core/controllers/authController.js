@@ -83,8 +83,8 @@ exports.adminResetPassword = async(req, res) => {
 
 exports.requestPasswordReset = async (req, res) => {
     try {
-        const { email } = req.body;
-        const result = await authService.requestPasswordReset(email);
+        const { email, organizationSlug } = req.body;
+        const result = await authService.requestPasswordReset(email, organizationSlug);
         res.json(result);
     } catch (error) {
         console.error('Request password reset error:', error);
