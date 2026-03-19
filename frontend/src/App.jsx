@@ -60,12 +60,6 @@ function App() {
   const isAdmin = currentUser?.role === 'admin';
 
   useEffect(() => {
-    if (!isAdmin && currentView !== 'dashboard') {
-      setCurrentView('dashboard');
-    }
-  }, [isAdmin, currentView]);
-
-  useEffect(() => {
     if (!isAuthenticated) return;
     
     const fetchBootstrap = async () => {

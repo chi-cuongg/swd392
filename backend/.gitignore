@@ -8,3 +8,4 @@ prisma/dev.db
 prisma/prisma/dev.db
 
 /generated/prisma
+dev.db
