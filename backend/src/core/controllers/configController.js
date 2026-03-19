@@ -30,24 +30,6 @@ exports.getOrganizations = async(req, res) => {
     }
 };
 
-exports.getMyOrganization = async(req, res) => {
-    try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: 'No token provided' });
-        }
-
-        const token = authHeader.split(' ')[1];
-        const organizations = await configService.getMyOrganization(token);
-        res.json(organizations);
-    } catch (error) {
-        console.error('Get organization error:', error);
-        const status = error.status || 500;
-        const message = error.message || 'Failed to fetch organization';
-        res.status(status).json({ error: message });
-    }
-};
-
 exports.getVariants = async(req, res) => {
     try {
         const { organizationId } = req.query;
