@@ -6,6 +6,8 @@ import Login from './components/Login';
 import DeviceManager from './components/DeviceManager';
 import Settings from './components/Settings';
 import AdminPanel from './components/AdminPanel';
+import AccountSettings from './components/AccountSettings';
+import ManageOrganizations from './components/ManageOrganizations';
 import axios from 'axios';
 import './index.css';
 import { API_BASE } from './config';
@@ -70,6 +72,9 @@ function App() {
       setCurrentView('dashboard');
     }
     if (!isSystemAdmin && currentView === 'admin') {
+      setCurrentView('dashboard');
+    }
+    if (!isSystemAdmin && currentView === 'manage-organizations') {
       setCurrentView('dashboard');
     }
   }, [isSystemAdmin, currentView]);
@@ -183,11 +188,17 @@ function App() {
             organizations={organizations}
             activeOrganizationId={activeOrganizationId}
             onOrganizationChange={handleOrganizationChange}
-            onOrganizationsChanged={refreshOrganizations}
             currentUser={currentUser}
           />
         )}
+        {isSystemAdmin && currentView === 'manage-organizations' && (
+          <ManageOrganizations
+            organizations={organizations}
+            onOrganizationsChanged={refreshOrganizations}
+          />
+        )}
         {currentView === 'settings' && <Settings organizationId={activeOrganizationId} domain={activeVariant} />}
+        {currentView === 'account-settings' && <AccountSettings currentUser={currentUser} />}
       </div>
     </SocketProvider>
   );

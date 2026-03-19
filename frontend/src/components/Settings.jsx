@@ -7,12 +7,6 @@ const Settings = ({ organizationId, domain }) => {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ warn: '', critical: '' });
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
-  const [savingPassword, setSavingPassword] = useState(false);
 
   const fetchThresholds = useCallback(async () => {
     if (!organizationId) return;
@@ -55,77 +49,11 @@ const Settings = ({ organizationId, domain }) => {
     }
   };
 
-  const handleResetPassword = async () => {
-    if (!passwordForm.currentPassword || !passwordForm.newPassword) {
-      alert('Current password and new password are required');
-      return;
-    }
-
-    if (passwordForm.newPassword.length < 6) {
-      alert('New password must be at least 6 characters');
-      return;
-    }
-
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      alert('Password confirmation does not match');
-      return;
-    }
-
-    setSavingPassword(true);
-    try {
-      await axios.post(`${API_BASE}/auth/reset-password`, {
-        currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword
-      });
-      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      alert('Password changed successfully');
-    } catch (err) {
-      console.error('Failed to reset password', err);
-      alert(err.response?.data?.error || 'Failed to reset password');
-    } finally {
-      setSavingPassword(false);
-    }
-  };
-
   return (
     <div className="flex-1 overflow-y-auto p-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-white mb-1">Alert Thresholds</h1>
         <p className="text-slate-400 text-sm">Configure warning and critical limits for metrics in <span className="text-blue-400 capitalize">{domain || 'All'}</span> domain.</p>
-      </div>
-
-      <div className="bg-dark-800 border border-slate-700/50 rounded-xl p-5 mb-8">
-        <h2 className="text-lg font-semibold text-white mb-3">Change Password</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <input
-            type="password"
-            value={passwordForm.currentPassword}
-            onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-            className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-            placeholder="Current password"
-          />
-          <input
-            type="password"
-            value={passwordForm.newPassword}
-            onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-            className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-            placeholder="New password"
-          />
-          <input
-            type="password"
-            value={passwordForm.confirmPassword}
-            onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-            className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-            placeholder="Confirm password"
-          />
-          <button
-            onClick={handleResetPassword}
-            disabled={savingPassword}
-            className="bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white rounded px-4 py-2 text-sm font-medium transition-colors"
-          >
-            {savingPassword ? 'Saving...' : 'Update Password'}
-          </button>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

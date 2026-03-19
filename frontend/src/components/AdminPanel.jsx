@@ -2,19 +2,6 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { API_BASE } from '../config';
 
-const DEFAULT_ORG_FORM = {
-  slug: '',
-  name: '',
-  domain: 'home',
-  description: ''
-};
-
-const DEFAULT_ORG_EDIT_FORM = {
-  slug: '',
-  name: '',
-  description: ''
-};
-
 const DEFAULT_USER_FORM = {
   email: '',
   password: '',
@@ -26,29 +13,11 @@ const AdminPanel = ({
   organizations,
   activeOrganizationId,
   onOrganizationChange,
-  onOrganizationsChanged,
   currentUser
 }) => {
-  const [orgForm, setOrgForm] = useState(DEFAULT_ORG_FORM);
-  const [orgSaving, setOrgSaving] = useState(false);
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [userForm, setUserForm] = useState(DEFAULT_USER_FORM);
-  const [orgEditForm, setOrgEditForm] = useState(DEFAULT_ORG_EDIT_FORM);
-  const [orgUpdating, setOrgUpdating] = useState(false);
-
-  useEffect(() => {
-    const selected = organizations.find((org) => org.id === activeOrganizationId);
-    if (!selected) {
-      setOrgEditForm(DEFAULT_ORG_EDIT_FORM);
-      return;
-    }
-    setOrgEditForm({
-      slug: selected.slug || '',
-      name: selected.name || '',
-      description: selected.description || ''
-    });
-  }, [organizations, activeOrganizationId]);
 
   const fetchUsers = async () => {
     if (!activeOrganizationId) {
@@ -73,37 +42,6 @@ const AdminPanel = ({
     fetchUsers();
   }, [activeOrganizationId]);
 
-  const handleCreateOrganization = async () => {
-    if (!orgForm.slug.trim() || !orgForm.name.trim() || !orgForm.domain.trim()) {
-      alert('slug, name and domain are required');
-      return;
-    }
-
-    setOrgSaving(true);
-    try {
-      const payload = {
-        slug: orgForm.slug.trim(),
-        name: orgForm.name.trim(),
-        domain: orgForm.domain.trim(),
-        description: orgForm.description.trim() || undefined
-      };
-
-      const res = await axios.post(`${API_BASE}/config/organizations`, payload);
-      const created = res.data;
-      setOrgForm(DEFAULT_ORG_FORM);
-      await onOrganizationsChanged?.(created?.id);
-      if (created?.id) {
-        onOrganizationChange?.(created.id);
-      }
-      alert(`Organization created: ${created?.name || created?.id}`);
-    } catch (err) {
-      console.error('Failed to create organization', err);
-      alert(err.response?.data?.error || 'Failed to create organization');
-    } finally {
-      setOrgSaving(false);
-    }
-  };
-
   const handleAddUser = async () => {
     if (!activeOrganizationId) {
       alert('Please select an organization first');
@@ -127,35 +65,6 @@ const AdminPanel = ({
     } catch (err) {
       console.error('Failed to add user', err);
       alert(err.response?.data?.error || 'Failed to add user');
-    }
-  };
-
-  const handleUpdateOrganization = async () => {
-    if (!activeOrganizationId) {
-      alert('Please select an organization first');
-      return;
-    }
-
-    if (!orgEditForm.slug.trim() || !orgEditForm.name.trim()) {
-      alert('slug and name are required');
-      return;
-    }
-
-    setOrgUpdating(true);
-    try {
-      await axios.put(`${API_BASE}/config/organizations/${activeOrganizationId}`, {
-        slug: orgEditForm.slug.trim(),
-        name: orgEditForm.name.trim(),
-        description: orgEditForm.description.trim() || ''
-      });
-
-      await onOrganizationsChanged?.(activeOrganizationId);
-      alert('Organization updated');
-    } catch (err) {
-      console.error('Failed to update organization', err);
-      alert(err.response?.data?.error || 'Failed to update organization');
-    } finally {
-      setOrgUpdating(false);
     }
   };
 
@@ -188,105 +97,13 @@ const AdminPanel = ({
   return (
     <div className="flex-1 overflow-y-auto p-8 space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-white mb-1">Administration</h1>
-        <p className="text-slate-400 text-sm">Create organizations and manage organization users.</p>
-      </div>
-
-      <div className="bg-dark-800 border border-slate-700/50 rounded-xl p-5">
-        <h2 className="text-lg font-semibold text-white mb-4">Edit Organization</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <select
-            value={activeOrganizationId || ''}
-            onChange={(e) => onOrganizationChange?.(e.target.value)}
-            className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white"
-          >
-            {organizations.map((org) => (
-              <option key={org.id} value={org.id}>{org.name}</option>
-            ))}
-          </select>
-          <input
-            type="text"
-            value={orgEditForm.slug}
-            onChange={(e) => setOrgEditForm({ ...orgEditForm, slug: e.target.value })}
-            className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-            placeholder="slug"
-          />
-          <input
-            type="text"
-            value={orgEditForm.name}
-            onChange={(e) => setOrgEditForm({ ...orgEditForm, name: e.target.value })}
-            className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-            placeholder="name"
-          />
-          <input
-            type="text"
-            value={orgEditForm.description}
-            onChange={(e) => setOrgEditForm({ ...orgEditForm, description: e.target.value })}
-            className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-            placeholder="description"
-          />
-        </div>
-        <div className="mt-3 flex justify-end">
-          <button
-            onClick={handleUpdateOrganization}
-            disabled={orgUpdating}
-            className="bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white rounded px-4 py-2 text-sm font-medium transition-colors"
-          >
-            {orgUpdating ? 'Saving...' : 'Save Organization'}
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-dark-800 border border-slate-700/50 rounded-xl p-5">
-        <h2 className="text-lg font-semibold text-white mb-4">Create Organization</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <input
-            type="text"
-            value={orgForm.slug}
-            onChange={(e) => setOrgForm({ ...orgForm, slug: e.target.value })}
-            className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-            placeholder="slug (ex: retail)"
-          />
-          <input
-            type="text"
-            value={orgForm.name}
-            onChange={(e) => setOrgForm({ ...orgForm, name: e.target.value })}
-            className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-            placeholder="name"
-          />
-          <select
-            value={orgForm.domain}
-            onChange={(e) => setOrgForm({ ...orgForm, domain: e.target.value })}
-            className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-          >
-            <option value="home">home</option>
-            <option value="factory">factory</option>
-            <option value="farm">farm</option>
-            <option value="hospital">hospital</option>
-            <option value="traffic">traffic</option>
-          </select>
-          <input
-            type="text"
-            value={orgForm.description}
-            onChange={(e) => setOrgForm({ ...orgForm, description: e.target.value })}
-            className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-            placeholder="description (optional)"
-          />
-        </div>
-        <div className="mt-3 flex justify-end">
-          <button
-            onClick={handleCreateOrganization}
-            disabled={orgSaving}
-            className="bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white rounded px-4 py-2 text-sm font-medium transition-colors"
-          >
-            {orgSaving ? 'Creating...' : 'Create Organization'}
-          </button>
-        </div>
+        <h1 className="text-2xl font-bold text-white mb-1">Manage Users</h1>
+        <p className="text-slate-400 text-sm">Add, remove, and manage users within an organization.</p>
       </div>
 
       <div className="bg-dark-800 border border-slate-700/50 rounded-xl p-5">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-          <h2 className="text-lg font-semibold text-white">Manage Users</h2>
+          <h2 className="text-lg font-semibold text-white">Users</h2>
           <select
             value={activeOrganizationId || ''}
             onChange={(e) => onOrganizationChange?.(e.target.value)}

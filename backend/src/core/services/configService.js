@@ -29,10 +29,17 @@ class ConfigService {
         const where = isSystemAdmin(userRole) ? {} : { id: organizationId };
         const organizations = await prisma.organization.findMany({
             where,
-            select: { id: true, slug: true, name: true, description: true },
+            select: {
+                id: true, slug: true, name: true, description: true, createdAt: true,
+                dashboards: { select: { domain: true, label: true } }
+            },
             orderBy: { name: 'asc' }
         });
-        return organizations;
+        return organizations.map(org => ({
+            ...org,
+            domains: org.dashboards?.map(d => d.domain) || [],
+            dashboards: undefined
+        }));
     }
 
     /**
@@ -351,6 +358,38 @@ class ConfigService {
 
         await prisma.user.delete({ where: { id: userId } });
         return { success: true, id: userId };
+    }
+
+    /**
+     * Delete organization and all related data (cascade)
+     */
+    async deleteOrganization(organizationId) {
+        const organization = await prisma.organization.findUnique({ where: { id: organizationId } });
+        if (!organization) {
+            throw { status: 404, message: 'Organization not found' };
+        }
+
+        // Get all metric IDs and device IDs for this org
+        const metrics = await prisma.metric.findMany({ where: { organizationId }, select: { id: true } });
+        const metricIds = metrics.map(m => m.id);
+        const devices = await prisma.device.findMany({ where: { organizationId }, select: { id: true } });
+        const deviceIds = devices.map(d => d.id);
+
+        // Cascade delete in correct order
+        if (metricIds.length > 0) {
+            await prisma.threshold.deleteMany({ where: { metricId: { in: metricIds } } });
+        }
+        if (deviceIds.length > 0) {
+            await prisma.sensorData.deleteMany({ where: { deviceId: { in: deviceIds } } });
+        }
+        await prisma.alert.deleteMany({ where: { organizationId } });
+        await prisma.metric.deleteMany({ where: { organizationId } });
+        await prisma.device.deleteMany({ where: { organizationId } });
+        await prisma.user.deleteMany({ where: { organizationId } });
+        await prisma.dashboardConfig.deleteMany({ where: { organizationId } });
+        await prisma.organization.delete({ where: { id: organizationId } });
+
+        return { success: true, id: organizationId };
     }
 }
 

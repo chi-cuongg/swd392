@@ -130,3 +130,15 @@ exports.removeUserFromOrganization = async(req, res) => {
         res.status(status).json({ error: message });
     }
 };
+
+exports.deleteOrganization = async(req, res) => {
+    try {
+        const result = await configService.deleteOrganization(req.params.organizationId);
+        res.json(result);
+    } catch (error) {
+        console.error('Delete organization error:', error);
+        const status = error.status || 500;
+        const message = error.message || 'Failed to delete organization';
+        res.status(status).json({ error: message });
+    }
+};

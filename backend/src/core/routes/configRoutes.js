@@ -13,6 +13,7 @@ router.get('/variants/:id', configController.getVariantById);
 
 router.post('/organizations', adminMiddleware, configController.createOrganization);
 router.put('/organizations/:organizationId', adminMiddleware, configController.updateOrganization);
+router.delete('/organizations/:organizationId', adminMiddleware, configController.deleteOrganization);
 router.get('/organizations/:organizationId/users', adminMiddleware, configController.getOrganizationUsers);
 router.post('/organizations/:organizationId/users', adminMiddleware, configController.addUserToOrganization);
 router.delete('/organizations/:organizationId/users/:userId', adminMiddleware, configController.removeUserFromOrganization);
