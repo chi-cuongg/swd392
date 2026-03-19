@@ -67,6 +67,7 @@ const DashboardLive = ({ socket, activeOrganizationId, activeVariant, config }) 
     const [data, setData] = useState({});
     const [history, setHistory] = useState({});
     const [status, setStatus] = useState('normal');
+    const [splitStatus, setSplitStatus] = useState({});
     const [message, setMessage] = useState('');
     const [alerts, setAlerts] = useState([]);
     const [lastUpdate, setLastUpdate] = useState(null);
@@ -95,6 +96,8 @@ const DashboardLive = ({ socket, activeOrganizationId, activeVariant, config }) 
                 const latestByMetric = {};
                 const historyByMetric = {};
                 const sourceByMetric = {};
+                const statusByMetric = {};
+
                 let mergedStatus = 'normal';
 
                 for (const row of logs) {
@@ -114,11 +117,17 @@ const DashboardLive = ({ socket, activeOrganizationId, activeVariant, config }) 
                     }
                     historyByMetric[key].push({ timestamp: row.timestamp, value });
 
-                    const rowStatus = row.status || 'normal';
+                    if (!statusByMetric[key]) {
+                        statusByMetric[key] = row.status || 'normal';
+                    }
+                }
+
+                Object.keys(statusByMetric).forEach((key) => {
+                    const rowStatus = statusByMetric[key];
                     if (severityRank[rowStatus] > severityRank[mergedStatus]) {
                         mergedStatus = rowStatus;
                     }
-                }
+                });
 
                 Object.keys(historyByMetric).forEach((key) => {
                     historyByMetric[key] = historyByMetric[key].reverse().slice(-30);
@@ -128,6 +137,7 @@ const DashboardLive = ({ socket, activeOrganizationId, activeVariant, config }) 
                     setData(latestByMetric);
                     setHistory(historyByMetric);
                     setStatus(mergedStatus);
+                    setSplitStatus(statusByMetric);
                     setLastUpdate(new Date(logs[0].timestamp));
                     setLastDeviceId(logs[0].deviceId || null);
                     setLastDeviceName(logs[0]?.device?.name || null);
@@ -240,7 +250,7 @@ const DashboardLive = ({ socket, activeOrganizationId, activeVariant, config }) 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {config.widgets.map((widget, idx) => (
                     <React.Fragment key={idx}>
-                        {renderWidget(widget, data, history, status, config)}
+                        {renderWidget(widget, data, history, splitStatus[widget.key], config)}
                     </React.Fragment>
                 ))}
             </div>
@@ -268,6 +278,7 @@ const Dashboard = ({ activeOrganizationId, activeVariant }) => {
                 });
                 if (isMounted) {
                     setConfig(res.data);
+                    console.log('Fetched config:', res.data);
                 }
             } catch (err) {
                 console.error('Failed to fetch config:', err);

@@ -36,3 +36,4 @@ npm-debug.log*
 
 # Package lock (optional, keep if needed)
 # package-lock.json
+backend/dev.db

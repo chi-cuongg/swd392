@@ -4,7 +4,7 @@ class LogService {
     /**
      * Get sensor logs with optional filters
      */
-    async getLogs(deviceId, organizationId, domain, level, limit = 100) {
+    async getLogs(deviceId, organizationId, domain, level, limit = 120) {
         const where = {};
         if (deviceId) where.deviceId = deviceId;
         if (level) where.status = level;
