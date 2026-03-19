@@ -1,5 +1,5 @@
 const prisma = require('../utils/prisma');
-const { getMetricSchema, getAllDomains, getDomain } = require('../../domains/registry');
+const { getMetricSchema } = require('../utils/metricSchema');
 
 class ConfigService {
     /**
@@ -69,8 +69,16 @@ class ConfigService {
             };
         }
 
-        const domainConfig = getDomain(domain);
-        if (!domainConfig) {
+        const dashboard = await prisma.dashboardConfig.findUnique({
+            where: {
+                organizationId_domain: {
+                    organizationId,
+                    domain
+                }
+            }
+        });
+
+        if (!dashboard) {
             throw {
                 status: 404,
                 message: 'Variant not found'
@@ -96,14 +104,14 @@ class ConfigService {
         }
 
         return {
-            id: domainConfig.id,
+            id: dashboard.domain,
             organizationId,
-            label: domainConfig.label,
-            description: domainConfig.description,
-            icon: domainConfig.icon,
-            color: domainConfig.color,
-            widgets: domainConfig.widgets,
-            thresholds: thresholds.length > 0 ? thresholds : domainConfig.thresholds
+            label: dashboard.label,
+            description: dashboard.description,
+            icon: dashboard.icon,
+            color: dashboard.color,
+            widgets: JSON.parse(dashboard.widgets),
+            thresholds
         };
     }
 }

@@ -1,5 +1,5 @@
 const prisma = require('../utils/prisma');
-const { DOMAIN_METRIC_KEYS, normalizeMetricKey } = require('../../domains/registry');
+const { DOMAIN_METRIC_KEYS, normalizeMetricKey } = require('../utils/metricSchema');
 
 class IngestService {
     /**
