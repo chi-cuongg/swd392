@@ -442,11 +442,15 @@
             logsEl.innerHTML = (data.logs || []).map(fmtLog).join('');
 
             const auto = data.autoConfig || {};
-            if (typeof auto.organizationIdOverride === 'string' && auto.organizationIdOverride) {
-                organizationIdEl.value = auto.organizationIdOverride;
-            }
-            if (typeof auto.deviceIdPrefix === 'string') {
-                devicePrefixEl.value = auto.deviceIdPrefix;
+            // Only update form values from autoConfig if we are actually currently running
+            // AND the user is not actively focused on the inputs to prevent overwriting their typing
+            if (isRunning) {
+                if (typeof auto.organizationIdOverride === 'string' && document.activeElement !== organizationIdEl) {
+                    organizationIdEl.value = auto.organizationIdOverride;
+                }
+                if (typeof auto.deviceIdPrefix === 'string' && document.activeElement !== devicePrefixEl) {
+                    devicePrefixEl.value = auto.deviceIdPrefix;
+                }
             }
 
             updateButtons();

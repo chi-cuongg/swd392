@@ -1,0 +1,159 @@
+{
+    "name": "SMP - Unified Ingest with Telegram Alerts",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "ingest",
+                "responseMode": "onReceived",
+                "options": {}
+            },
+            "id": "11111111-1111-1111-1111-111111111101",
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [250, 300]
+        },
+        {
+            "parameters": {
+                "jsCode": "const input = $input.first().json.body || $input.first().json;\nreturn [{\n  json: {\n    organizationId: input.organizationId || 'org_default',\n    deviceId: input.deviceId,\n    domain: input.domain || 'home',\n    metrics: input.metrics || {},\n    timestamp: input.timestamp || Date.now()\n  }\n}];"
+            },
+            "id": "11111111-1111-1111-1111-111111111102",
+            "name": "Evaluate by Domain",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [450, 300]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "http://host.docker.internal:3000/api/ingest",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify($json) }}",
+                "options": {},
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "x-ingest-key",
+                            "value": "spla_ingest_dev_key"
+                        }
+                    ]
+                }
+            },
+            "id": "11111111-1111-1111-1111-111111111103",
+            "name": "POST to Core",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [650, 300]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{ $json.status }}",
+                            "operation": "equal",
+                            "value2": "critical"
+                        }
+                    ]
+                }
+            },
+            "id": "11111111-1111-1111-1111-111111111104",
+            "name": "IF Alert",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [850, 300]
+        },
+        {
+            "parameters": {
+                "jsCode": "const res = $input.first().json;\nconst metrics = $('Evaluate by Domain').first().json.metrics;\nconst metricsTxt = Object.entries(metrics).map(([k,v]) => `${k}: ${v}`).join('\\n - ');\n\nconst text = `🚨 <b>SPLA ALERT: ${res.status.toUpperCase()}</b>\\n\\n`\n  + `🏢 <b>Org:</b> ${res.organizationId}\\n`\n  + `📱 <b>Device:</b> ${res.deviceId}\\n`\n  + `🌐 <b>Domain:</b> ${res.domain}\\n`\n  + `⚠️ <b>Alerts Triggered:</b> ${res.alertCount}\\n\\n`\n  + `📊 <b>Metrics:</b>\\n - ${metricsTxt}`;\n\nreturn [{\n  json: { text }\n}];"
+            },
+            "id": "11111111-1111-1111-1111-111111111105",
+            "name": "Format Telegram Message",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [1050, 200]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "=https://api.telegram.org/bot{{ $env[\"N8N_TELEGRAM_BOT_TOKEN\"] }}/sendMessage",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({ chat_id: $env[\"N8N_TELEGRAM_CHAT_ID\"], text: $json.text, parse_mode: \"HTML\" }) }}",
+                "options": {}
+            },
+            "id": "11111111-1111-1111-1111-111111111106",
+            "name": "Send Telegram Alert",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [1250, 200]
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Evaluate by Domain",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Evaluate by Domain": {
+            "main": [
+                [
+                    {
+                        "node": "POST to Core",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "POST to Core": {
+            "main": [
+                [
+                    {
+                        "node": "IF Alert",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IF Alert": {
+            "main": [
+                [
+                    {
+                        "node": "Format Telegram Message",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Format Telegram Message": {
+            "main": [
+                [
+                    {
+                        "node": "Send Telegram Alert",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "pinData": {},
+    "meta": {
+        "instanceId": "smp-unified-workflow"
+    }
+}

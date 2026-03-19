@@ -12,6 +12,8 @@ services:
       - WEBHOOK_URL=http://localhost:5678/
       - N8N_HOST=0.0.0.0
       - GENERIC_TIMEZONE=Asia/Ho_Chi_Minh
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+      - N8N_ENV_VARS_ALLOWED=N8N_TELEGRAM_BOT_TOKEN,N8N_TELEGRAM_CHAT_ID,TELEGRAM_BOT_TOKEN,TELEGRAM_CHAT_ID
     volumes:
       - ./n8n_data:/home/node/.n8n
     extra_hosts:

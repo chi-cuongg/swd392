@@ -20,7 +20,7 @@ const VARIANTS = {
             { id: 'dev_home_smoke_01', name: 'Home Smoke Sensor', metricKeys: ['smoke'] },
             { id: 'dev_home_access_01', name: 'Home Access Sensor', metricKeys: ['door', 'motion'] }
         ],
-        n8nPath: '/smart-home',
+        n8nPath: '/ingest',
         generateRandom: () => {
             const temp = 20 + Math.random() * 60;
             const smoke = Math.random() * 100;
@@ -43,7 +43,7 @@ const VARIANTS = {
             { id: 'dev_hosp_spo2_01', name: 'Hospital SpO2 Sensor', metricKeys: ['spo2'] },
             { id: 'dev_hosp_bp_01', name: 'Hospital BP Sensor', metricKeys: ['blood_pressure'] }
         ],
-        n8nPath: '/hospital',
+        n8nPath: '/ingest',
         generateRandom: () => {
             const heart_rate = 60 + Math.floor(Math.random() * 100);
             const spo2 = 88 + Math.floor(Math.random() * 12);
@@ -65,7 +65,7 @@ const VARIANTS = {
             { id: 'dev_fact_vib_01', name: 'Factory Vibration Sensor', metricKeys: ['vibration'] },
             { id: 'dev_fact_pressure_01', name: 'Factory Pressure Sensor', metricKeys: ['pressure'] }
         ],
-        n8nPath: '/factory',
+        n8nPath: '/ingest',
         generateRandom: () => {
             const machine_temp = 30 + Math.random() * 80;
             const vibration = Math.random() * 100;
@@ -90,7 +90,7 @@ const VARIANTS = {
             { id: 'dev_traf_density_01', name: 'Traffic Density Sensor', metricKeys: ['vehicle_density'] },
             { id: 'dev_traf_incident_01', name: 'Traffic Incident Sensor', metricKeys: ['accident', 'congestion'] }
         ],
-        n8nPath: '/traffic',
+        n8nPath: '/ingest',
         generateRandom: () => {
             const vehicle_density = Math.floor(Math.random() * 120);
             const accident = Math.random() > 0.95 ? 1 : 0;
@@ -112,7 +112,7 @@ const VARIANTS = {
             { id: 'dev_farm_light_01', name: 'Farm Light Sensor', metricKeys: ['light_intensity'] },
             { id: 'dev_farm_ph_01', name: 'Farm pH Sensor', metricKeys: ['ph'] }
         ],
-        n8nPath: '/farm',
+        n8nPath: '/ingest',
         generateRandom: () => {
             const soil_moisture = Math.random() * 100;
             const light_intensity = Math.floor(Math.random() * 1200);
