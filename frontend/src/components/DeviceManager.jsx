@@ -100,90 +100,108 @@ const DeviceManager = ({ organizationId, domain }) => {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-8">
+    <div className="flex-1 overflow-y-auto p-8 max-w-7xl mx-auto w-full">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white mb-1">Device Management</h1>
-          <p className="text-slate-400 text-sm">Active Domain: <span className="text-blue-400 capitalize">{domain || 'All'}</span></p>
+          <h1 className="page-title">Device Management</h1>
+          <p className="text-slate-400 text-sm">Active Domain: <span className="text-blue-400 capitalize font-medium px-2 py-0.5 bg-blue-500/10 rounded-md border border-blue-500/20">{domain || 'All'}</span></p>
         </div>
       </div>
 
-      <div className="bg-dark-800 border border-slate-700/50 rounded-xl p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-          <input
-            type="text"
-            value={newDevice.id}
-            onChange={(e) => setNewDevice({ ...newDevice, id: e.target.value })}
-            className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-            placeholder="Device ID (required)"
-          />
-          <input
-            type="text"
-            value={newDevice.name}
-            onChange={(e) => setNewDevice({ ...newDevice, name: e.target.value })}
-            className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-            placeholder="Device Name"
-          />
-          <input
-            type="text"
-            value={newDevice.type}
-            onChange={(e) => setNewDevice({ ...newDevice, type: e.target.value })}
-            className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-            placeholder="Device Type"
-          />
-          <input
-            type="text"
-            value={newDevice.metricKeys}
-            onChange={(e) => setNewDevice({ ...newDevice, metricKeys: e.target.value })}
-            className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-            placeholder="metric keys: temp,smoke"
-          />
+      <div className="glass-card p-6 mb-8 border-slate-700/50">
+        <h3 className="section-title text-base mb-4 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-blue-400"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 16.875h3.375m0 0h3.375m-3.375 0V13.5m0 3.375v3.375M6 10.5h2.25a2.25 2.25 0 002.25-2.25V6a2.25 2.25 0 00-2.25-2.25H6A2.25 2.25 0 003.75 6v2.25A2.25 2.25 0 006 10.5zm0 9.75h2.25A2.25 2.25 0 0010.5 18v-2.25a2.25 2.25 0 00-2.25-2.25H6a2.25 2.25 0 00-2.25 2.25V18A2.25 2.25 0 006 20.25zm9.75-9.75H18a2.25 2.25 0 002.25-2.25V6A2.25 2.25 0 0018 3.75h-2.25A2.25 2.25 0 0013.5 6v2.25a2.25 2.25 0 002.25 2.25z" /></svg> Add New Device</h3>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+          <div>
+            <label className="input-label text-xs">Device ID <span className="text-red-400">*</span></label>
+            <input
+              type="text"
+              value={newDevice.id}
+              onChange={(e) => setNewDevice({ ...newDevice, id: e.target.value })}
+              className="form-input"
+              placeholder="e.g. sensor_01"
+            />
+          </div>
+          <div>
+            <label className="input-label text-xs">Name</label>
+            <input
+              type="text"
+              value={newDevice.name}
+              onChange={(e) => setNewDevice({ ...newDevice, name: e.target.value })}
+              className="form-input"
+              placeholder="Device Name"
+            />
+          </div>
+          <div>
+            <label className="input-label text-xs">Type</label>
+            <input
+              type="text"
+              value={newDevice.type}
+              onChange={(e) => setNewDevice({ ...newDevice, type: e.target.value })}
+              className="form-input"
+              placeholder="e.g. Temperature"
+            />
+          </div>
+          <div>
+            <label className="input-label text-xs">Metric Keys</label>
+            <input
+              type="text"
+              value={newDevice.metricKeys}
+              onChange={(e) => setNewDevice({ ...newDevice, metricKeys: e.target.value })}
+              className="form-input"
+              placeholder="temp, smoke"
+            />
+          </div>
           <button
             onClick={handleCreateDevice}
-            className="bg-blue-600 hover:bg-blue-500 text-white rounded px-4 py-2 text-sm font-medium transition-colors"
+            className="btn-primary"
           >
             Add Device
           </button>
         </div>
-        <p className="text-xs text-slate-500 mt-2">
-          Metric keys help mapping payload metrics to the correct device (comma separated).
+        <p className="text-[11px] text-slate-500 mt-3 flex items-center gap-1.5 border-l-2 border-slate-700 pl-2">
+          <span>ℹ️</span> Metric keys help map payload properties to the correct device (comma separated).
         </p>
       </div>
 
-      <div className="bg-dark-800 border border-slate-700/50 rounded-xl overflow-hidden">
+      <div className="glass-table-container">
         {loading ? (
-          <div className="p-8 text-center text-slate-400">Loading devices...</div>
+          <div className="p-12 text-center text-slate-400">Loading devices...</div>
         ) : devices.length === 0 ? (
-          <div className="p-8 text-center text-slate-400">No devices found for this domain. Create devices manually before ingesting data.</div>
+          <div className="p-12 text-center text-slate-400">
+             <div className="text-4xl mb-3">🎛️</div>
+             <div className="font-medium">No devices found</div>
+             <div className="text-sm mt-1">Create devices manually before ingesting data.</div>
+          </div>
         ) : (
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-800/50 border-b border-slate-700/50">
-              <tr>
-                <th className="p-4 font-semibold text-slate-300">Device ID</th>
-                <th className="p-4 font-semibold text-slate-300">Name</th>
-                <th className="p-4 font-semibold text-slate-300">Description</th>
-                <th className="p-4 font-semibold text-slate-300">Metric Mapping</th>
-                <th className="p-4 font-semibold text-slate-300">Recent Data</th>
-                <th className="p-4 font-semibold text-slate-300">Last Seen</th>
-                <th className="p-4 font-semibold text-slate-300 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-700/50">
-              {devices.map(device => (
-                <tr key={device.id} className="hover:bg-slate-800/25 transition-colors">
-                  <td className="p-4 font-mono text-xs text-blue-400">{device.id}</td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm whitespace-nowrap">
+              <thead className="bg-[#222e4c]/50 text-slate-300 border-b border-slate-700/40 uppercase tracking-wider text-[11px] font-bold">
+                <tr>
+                  <th className="p-4 px-6">Device ID</th>
+                  <th className="p-4">Name</th>
+                  <th className="p-4">Description</th>
+                  <th className="p-4">Metric Mapping</th>
+                  <th className="p-4">Recent Data</th>
+                  <th className="p-4">Last Seen</th>
+                  <th className="p-4 text-right px-6">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-700/30">
+                {devices.map((device, index) => (
+                  <tr key={device.id} className={`text-slate-300 hover:bg-[#222e4c]/40 transition-colors ${index % 2 === 0 ? 'bg-[#131a2b]/30' : ''}`}>
+                  <td className="p-4 px-6 font-mono text-xs text-blue-400 bg-blue-500/5">{device.id}</td>
                   
-                  <td className="p-4 text-slate-300 font-medium">
+                  <td className="p-4 text-slate-200 font-medium">
                     {editingDevice === device.id ? (
                       <input 
                         type="text" 
                         value={editForm.name}
                         onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-                        className="bg-slate-900 border border-slate-600 rounded px-2 py-1 w-full text-sm focus:border-blue-500 focus:outline-none"
+                        className="form-input py-1.5 px-3"
                         placeholder="Device Name"
                       />
                     ) : (
-                      device.name || <span className="text-slate-500 italic">Unnamed Device</span>
+                      device.name || <span className="text-slate-500 italic font-normal">Unnamed Device</span>
                     )}
                   </td>
                   
@@ -193,40 +211,42 @@ const DeviceManager = ({ organizationId, domain }) => {
                         type="text" 
                         value={editForm.description}
                         onChange={(e) => setEditForm({...editForm, description: e.target.value})}
-                        className="bg-slate-900 border border-slate-600 rounded px-2 py-1 w-full text-sm focus:border-blue-500 focus:outline-none"
+                        className="form-input py-1.5 px-3"
                         placeholder="Description"
                       />
                     ) : (
-                      device.description || '-'
+                      <span className="max-w-[150px] truncate block">{device.description || '-'}</span>
                     )}
                   </td>
 
                   <td className="p-4 text-slate-400 text-xs">
                     {Array.isArray(device.metricKeys) && device.metricKeys.length > 0
-                      ? device.metricKeys.join(', ')
-                      : '-'}
+                      ? device.metricKeys.map(k => (
+                          <span key={k} className="inline-block bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded text-[10px] mr-1 mb-1">{k}</span>
+                        ))
+                      : <span className="text-slate-600">-</span>}
                   </td>
 
-                  <td className="p-4 text-slate-400 text-xs">
-                    {formatRecentData(device)}
+                  <td className="p-4 text-slate-400 text-xs font-mono">
+                    <span className="max-w-[200px] truncate block">{formatRecentData(device)}</span>
                   </td>
                   
-                  <td className="p-4 text-slate-400">
+                  <td className="p-4 text-slate-400 text-xs">
                     {new Date(device.updatedAt).toLocaleString()}
                   </td>
                   
-                  <td className="p-4 text-right">
+                  <td className="p-4 px-6 text-right">
                     {editingDevice === device.id ? (
                       <div className="flex justify-end gap-2">
                         <button 
                           onClick={() => handleSaveClick(device.id)}
-                          className="px-3 py-1 bg-green-500/20 text-green-400 hover:bg-green-500/30 rounded text-xs font-medium transition-colors"
+                          className="px-3 py-1.5 bg-green-500/10 text-green-500 border border-green-500/20 hover:bg-green-500/20 rounded-lg text-xs font-medium transition-colors inline-flex items-center gap-1"
                         >
-                          Save
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" /></svg> Save
                         </button>
                         <button 
                           onClick={() => setEditingDevice(null)}
-                          className="px-3 py-1 bg-slate-700/50 text-slate-300 hover:bg-slate-700 rounded text-xs font-medium transition-colors"
+                          className="px-3 py-1.5 bg-slate-700/30 text-slate-300 border border-slate-700/50 hover:bg-slate-700/50 rounded-lg text-xs font-medium transition-colors"
                         >
                           Cancel
                         </button>
@@ -235,15 +255,15 @@ const DeviceManager = ({ organizationId, domain }) => {
                       <div className="flex justify-end gap-2">
                         <button 
                           onClick={() => handleEditClick(device)}
-                          className="px-3 py-1 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 rounded-lg text-xs font-medium transition-colors"
+                          className="px-3 py-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 rounded-lg text-xs font-medium transition-colors inline-flex items-center gap-1.5"
                         >
-                          Edit
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" /></svg> Edit
                         </button>
                         <button
                           onClick={() => handleDeleteDevice(device.id)}
-                          className="px-3 py-1 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg text-xs font-medium transition-colors"
+                          className="px-3 py-1.5 bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 rounded-lg text-xs font-medium transition-colors inline-flex items-center gap-1.5"
                         >
-                          Delete
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5"><path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clipRule="evenodd" /></svg> Delete
                         </button>
                       </div>
                     )}
@@ -252,6 +272,7 @@ const DeviceManager = ({ organizationId, domain }) => {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

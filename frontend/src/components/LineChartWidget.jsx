@@ -46,13 +46,14 @@ const LineChartWidget = ({ title, data = [], label, unit, color = '#3b82f6' }) =
             legend: { display: false },
             title: { display: false },
             tooltip: {
-                backgroundColor: '#1e293b',
-                titleColor: '#f1f5f9',
+                backgroundColor: '#1a233a',
+                titleColor: '#f8fafc',
                 bodyColor: '#94a3b8',
-                borderColor: '#334155',
+                borderColor: 'rgba(51, 65, 85, 0.4)',
                 borderWidth: 1,
-                cornerRadius: 8,
-                padding: 10,
+                cornerRadius: 12,
+                padding: 12,
+                boxPadding: 4,
             },
         },
         scales: {
@@ -61,8 +62,9 @@ const LineChartWidget = ({ title, data = [], label, unit, color = '#3b82f6' }) =
                 grid: { display: false },
             },
             y: {
-                grid: { color: '#334155', lineWidth: 0.5 },
-                ticks: { color: '#94a3b8', font: { size: 10 } },
+                grid: { color: 'rgba(51, 65, 85, 0.3)', lineWidth: 1 },
+                ticks: { color: '#64748b', font: { size: 11, family: 'Inter' } },
+                border: { display: false }
             },
         },
         interaction: {
@@ -72,9 +74,13 @@ const LineChartWidget = ({ title, data = [], label, unit, color = '#3b82f6' }) =
     };
 
     return (
-        <div className="glass-card p-5 animate-fade-in-up">
-            <p className="text-sm text-slate-400 mb-3 font-medium">{title}</p>
-            <div className="h-40">
+        <div className="glass-card p-6 animate-fade-in-up h-full flex flex-col relative overflow-hidden group">
+            <div 
+                className="absolute -left-10 -top-10 w-32 h-32 rounded-full blur-3xl opacity-10 transition-opacity duration-500 group-hover:opacity-20"
+                style={{ backgroundColor: color }}
+            />
+            <p className="text-sm text-slate-400 mb-4 font-medium uppercase tracking-wider relative z-10">{title}</p>
+            <div className="h-48 relative z-10">
                 <Line ref={chartRef} options={options} data={chartData} />
             </div>
         </div>

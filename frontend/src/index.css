@@ -2,18 +2,31 @@
 
 @layer base {
     :root {
-        --bg-primary: #0f172a;
-        --bg-secondary: #1e293b;
-        --bg-card: #1e293b;
-        --bg-card-hover: #334155;
-        --text-primary: #f1f5f9;
+        /* Color Palette */
+        --bg-primary: #0a0f1c;      /* Deeper dark blue/black */
+        --bg-secondary: #131a2b;    /* Slightly lighter surface */
+        --bg-card: #1a233a;         /* Card surface */
+        --bg-card-hover: #222e4c;
+        
+        --text-primary: #f8fafc;
         --text-secondary: #94a3b8;
-        --accent-blue: #3b82f6;
-        --accent-green: #22c55e;
-        --accent-red: #ef4444;
-        --accent-yellow: #f59e0b;
-        --accent-purple: #a855f7;
-        --border: #334155;
+        --text-muted: #64748b;
+        
+        --accent-blue: #3b82f6;     /* Primary */
+        --accent-green: #10b981;    /* Success */
+        --accent-red: #ef4444;      /* Critical */
+        --accent-yellow: #f59e0b;   /* Warning */
+        --accent-purple: #8b5cf6;
+        
+        --border-color: rgba(51, 65, 85, 0.4);
+        --border-hover: rgba(59, 130, 246, 0.3);
+        
+        /* Spacing & Layout */
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius-lg: 16px;
+        --card-padding: 24px;
+        --section-gap: 24px;
     }
 
     * {
@@ -49,22 +62,59 @@
 
 @layer components {
     .glass-card {
-        background: rgba(30, 41, 59, 0.8);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(51, 65, 85, 0.5);
-        border-radius: 12px;
-        transition: all 0.3s ease;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     }
 
     .glass-card:hover {
-        border-color: rgba(59, 130, 246, 0.3);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        transform: translateY(-2px);
+        border-color: var(--border-hover);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .page-title {
+        @apply text-3xl font-bold text-white mb-2;
+    }
+    
+    .section-title {
+        @apply text-xl font-semibold text-slate-200 mb-4;
+    }
+    
+    .input-label {
+        @apply block text-sm font-medium text-slate-300 mb-1.5;
+    }
+    
+    .form-input {
+        @apply w-full bg-[#131a2b] border border-slate-700/60 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all;
+    }
+    
+    .btn-primary {
+        @apply flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl px-5 py-2.5 text-sm font-medium transition-all active:scale-[0.98] shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed;
+    }
+
+    .btn-danger {
+        @apply flex items-center justify-center gap-2 bg-red-600 hover:bg-red-500 text-white rounded-xl px-5 py-2.5 text-sm font-medium transition-all active:scale-[0.98] shadow-lg shadow-red-600/20 disabled:opacity-50 disabled:cursor-not-allowed;
+    }
+    
+    .btn-secondary {
+        @apply flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-white rounded-xl px-5 py-2.5 text-sm font-medium transition-all active:scale-[0.98];
+    }
+    
+    .glass-table-container {
+        @apply bg-[#1a233a] border border-slate-700/40 rounded-xl overflow-hidden shadow-lg;
     }
 }
 
 @layer utilities {
     .animate-fade-in-up {
-        animation: fadeInUp 0.5s ease-out forwards;
+        animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .animate-fade-scale {
+        animation: fadeScale 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
     .animate-pulse-glow {
@@ -89,6 +139,17 @@
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@keyframes fadeScale {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
     }
 }
 

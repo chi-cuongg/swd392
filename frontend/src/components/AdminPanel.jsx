@@ -95,19 +95,24 @@ const AdminPanel = ({
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-8 space-y-8">
+    <div className="flex-1 overflow-y-auto p-8 max-w-7xl mx-auto w-full space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-white mb-1">Manage Users</h1>
+        <h1 className="page-title">Manage Users</h1>
         <p className="text-slate-400 text-sm">Add, remove, and manage users within an organization.</p>
       </div>
 
-      <div className="bg-dark-800 border border-slate-700/50 rounded-xl p-5">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-          <h2 className="text-lg font-semibold text-white">Users</h2>
+      <div className="glass-card p-6 border-slate-700/50">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 border-b border-slate-700/50 pb-4">
+          <h3 className="section-title mb-0 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-blue-400">
+              <path d="M4.5 6.375a4.125 4.125 0 118.25 0 4.125 4.125 0 01-8.25 0zM14.25 8.625a3.375 3.375 0 116.75 0 3.375 3.375 0 01-6.75 0zM1.5 19.125a7.125 7.125 0 0114.25 0v.003l-.001.119a.75.75 0 01-.363.63 13.067 13.067 0 01-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 01-.364-.63l-.001-.122zM17.25 19.128l-.001.144a2.25 2.25 0 01-.233.96 10.088 10.088 0 005.06-1.01.75.75 0 00.42-.643 4.875 4.875 0 00-6.957-4.611 8.586 8.586 0 011.71 5.157v.003z" />
+            </svg>
+            Organization Users
+          </h3>
           <select
             value={activeOrganizationId || ''}
             onChange={(e) => onOrganizationChange?.(e.target.value)}
-            className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white"
+            className="form-input md:w-64"
           >
             {organizations.map((org) => (
               <option key={org.id} value={org.id}>{org.name}</option>
@@ -115,89 +120,118 @@ const AdminPanel = ({
           </select>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
-          <input
-            type="email"
-            value={userForm.email}
-            onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
-            className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-            placeholder="email"
-          />
-          <input
-            type="password"
-            value={userForm.password}
-            onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
-            className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-            placeholder="password"
-          />
-          <input
-            type="text"
-            value={userForm.name}
-            onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
-            className="bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
-            placeholder="name (optional)"
-          />
-          <div className="flex gap-2">
-            <select
-              value={userForm.role}
-              onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
-              className="flex-1 bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white"
-            >
-              <option value="ORG_USER">ORG_USER</option>
-              <option value="SYSTEM_ADMIN">SYSTEM_ADMIN</option>
-            </select>
-            <button
-              onClick={handleAddUser}
-              className="bg-green-600 hover:bg-green-500 text-white rounded px-4 py-2 text-sm font-medium transition-colors"
-            >
-              Add
-            </button>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 bg-slate-900/30 p-4 rounded-xl border border-slate-700/30">
+            <div>
+                 <label className="input-label text-xs">Email</label>
+                <input
+                  type="email"
+                  value={userForm.email}
+                  onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                  className="form-input"
+                  placeholder="user@example.com"
+                />
+            </div>
+            <div>
+                 <label className="input-label text-xs">Password</label>
+                <input
+                  type="password"
+                  value={userForm.password}
+                  onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                  className="form-input"
+                  placeholder="••••••"
+                />
+            </div>
+            <div>
+                 <label className="input-label text-xs">Name</label>
+                <input
+                  type="text"
+                  value={userForm.name}
+                  onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
+                  className="form-input"
+                  placeholder="Optional"
+                />
+            </div>
+            <div>
+                 <label className="input-label text-xs">Role & Action</label>
+                <div className="flex gap-2">
+                <select
+                    value={userForm.role}
+                    onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
+                    className="flex-1 form-input w-32"
+                >
+                    <option value="ORG_USER">USER</option>
+                    <option value="SYSTEM_ADMIN">ADMIN</option>
+                </select>
+                <button
+                    onClick={handleAddUser}
+                    className="btn-primary"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg>
+                    Add
+                </button>
+                </div>
+            </div>
         </div>
 
-        <div className="bg-dark-900 border border-slate-700/50 rounded-lg overflow-hidden">
+        <div className="glass-table-container">
           {usersLoading ? (
-            <div className="p-5 text-slate-400 text-sm">Loading users...</div>
+            <div className="p-12 text-center text-slate-400">Loading users...</div>
           ) : users.length === 0 ? (
-            <div className="p-5 text-slate-400 text-sm">No users found in this organization.</div>
+            <div className="p-12 text-center text-slate-400">
+               <div className="text-4xl mb-3">👥</div>
+               <div className="font-medium text-sm">No users found in this organization.</div>
+            </div>
           ) : (
-            <table className="w-full text-sm">
-              <thead className="bg-slate-800/60 text-slate-300">
-                <tr>
-                  <th className="p-3 text-left">Name</th>
-                  <th className="p-3 text-left">Email</th>
-                  <th className="p-3 text-left">Role</th>
-                  <th className="p-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-700/50">
-                {users.map((user) => {
-                  const isCurrentUser = currentUser?.id === user.id;
-                  return (
-                    <tr key={user.id} className="text-slate-300">
-                      <td className="p-3">{user.name || '-'}</td>
-                      <td className="p-3">{user.email}</td>
-                      <td className="p-3">{user.role}</td>
-                      <td className="p-3 text-right space-x-2">
-                        <button
-                          onClick={() => handleAdminResetPassword(user.id)}
-                          className="px-3 py-1 bg-blue-500/15 text-blue-400 rounded hover:bg-blue-500/25"
-                        >
-                          Reset Password
-                        </button>
-                        <button
-                          onClick={() => handleDeleteUser(user.id)}
-                          disabled={isCurrentUser}
-                          className="px-3 py-1 bg-red-500/15 text-red-400 rounded hover:bg-red-500/25 disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          Remove
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left whitespace-nowrap">
+                <thead className="bg-[#222e4c]/50 text-slate-300 border-b border-slate-700/40 uppercase tracking-wider text-[11px] font-bold">
+                  <tr>
+                    <th className="p-4 px-6">Name</th>
+                    <th className="p-4">Email</th>
+                    <th className="p-4">Role</th>
+                    <th className="p-4 text-right px-6">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-700/30">
+                  {users.map((user, index) => {
+                    const isCurrentUser = currentUser?.id === user.id;
+                    return (
+                      <tr key={user.id} className={`text-slate-300 hover:bg-[#222e4c]/40 transition-colors ${index % 2 === 0 ? 'bg-[#131a2b]/30' : ''}`}>
+                        <td className="p-4 px-6">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xs uppercase shadow-inner border border-blue-500/30">
+                                    {user.name ? user.name.charAt(0) : user.email.charAt(0)}
+                                </div>
+                                <span className={user.name ? 'font-medium text-slate-200' : 'text-slate-500 italic'}>{user.name || 'Unnamed'}</span>
+                            </div>
+                        </td>
+                        <td className="p-4 text-slate-400">{user.email}</td>
+                        <td className="p-4">
+                            <span className={`inline-block border px-2 py-0.5 rounded text-[10px] font-semibold tracking-wider ${user.role === 'SYSTEM_ADMIN' ? 'bg-purple-500/10 text-purple-400 border-purple-500/30' : 'bg-slate-700/40 text-slate-300 border-slate-600/50'}`}>
+                                {user.role}
+                            </span>
+                        </td>
+                        <td className="p-4 text-right px-6 space-x-2">
+                          <button
+                            onClick={() => handleAdminResetPassword(user.id)}
+                            className="px-3 py-1.5 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 hover:bg-yellow-500/20 rounded-lg text-xs font-medium transition-colors"
+                          >
+                            Reset Password
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(user.id)}
+                            disabled={isCurrentUser}
+                            className="px-3 py-1.5 bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 rounded-lg text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

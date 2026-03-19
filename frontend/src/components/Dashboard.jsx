@@ -200,13 +200,13 @@ const DashboardLive = ({ socket, activeOrganizationId, activeVariant, config }) 
     return (
         <div className="flex-1 p-6 overflow-y-auto">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-8">
                 <div>
-                    <h2 className="text-2xl font-bold text-white">{config.label}</h2>
-                    <p className="text-sm text-slate-400 mt-1">{config.description}</p>
+                    <h2 className="text-3xl font-bold text-white tracking-tight">{config.label}</h2>
+                    <p className="text-sm text-slate-400 mt-2">{config.description}</p>
                     {(lastDeviceId || lastDeviceName) && (
                         <p className="text-xs text-slate-500 mt-1">
-                            Source device: {lastDeviceName || lastDeviceId}
+                            Source: <span className="text-slate-300">{lastDeviceName || lastDeviceId}</span>
                             {lastDeviceName && lastDeviceId ? ` (${lastDeviceId})` : ''}
                         </p>
                     )}
@@ -220,34 +220,34 @@ const DashboardLive = ({ socket, activeOrganizationId, activeVariant, config }) 
                 </div>
                 <div className="flex items-center gap-4">
                     {lastUpdate && (
-                        <span className="text-xs text-slate-500">
-                            Last update: {lastUpdate.toLocaleTimeString()}
+                        <span className="text-xs font-medium text-slate-500 bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700/50">
+                            Updated: {lastUpdate.toLocaleTimeString()}
                         </span>
                     )}
-                    <div className={`px-4 py-2 rounded-full text-sm font-semibold uppercase tracking-wider transition-all duration-300 ${status === 'critical'
-                            ? 'bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse-glow'
+                    <div className={`px-5 py-2 rounded-xl text-sm font-bold uppercase tracking-widest transition-all duration-300 shadow-lg ${status === 'critical'
+                            ? 'bg-red-500/20 text-red-500 border border-red-500/30 animate-pulse-glow shadow-red-500/20'
                             : status === 'warning'
-                                ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                                : 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30 shadow-yellow-500/10'
+                                : 'bg-green-500/20 text-green-500 border border-green-500/30'
                         }`}>
-                        {status}
+                        System Status: {status}
                     </div>
                 </div>
             </div>
 
             {/* Live message */}
             {message && status !== 'normal' && (
-                <div className={`mb-6 p-4 rounded-lg border animate-slide-in ${status === 'critical'
-                        ? 'bg-red-500/10 border-red-500/30 text-red-300'
-                        : 'bg-yellow-500/10 border-yellow-500/30 text-yellow-300'
+                <div className={`mb-8 p-4 rounded-xl border animate-fade-scale shadow-lg flex items-center gap-3 ${status === 'critical'
+                        ? 'bg-red-500/10 border-red-500/30 text-red-400 shadow-red-500/10'
+                        : 'bg-yellow-500/10 border-yellow-500/30 text-yellow-500 shadow-yellow-500/10'
                     }`}>
-                    <span className="text-lg mr-2">{status === 'critical' ? '🚨' : '⚠️'}</span>
-                    {message}
+                    <span className="text-2xl">{status === 'critical' ? '🚨' : '⚠️'}</span>
+                    <span className="font-medium text-sm">{message}</span>
                 </div>
             )}
 
             {/* Widgets Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {config.widgets.map((widget, idx) => (
                     <React.Fragment key={idx}>
                         {renderWidget(widget, data, history, splitStatus[widget.key], config)}

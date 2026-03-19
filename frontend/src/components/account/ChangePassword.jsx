@@ -66,40 +66,40 @@ const ChangePassword = () => {
       )}
 
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-1.5">
+        <label className="input-label">
           Current Password
         </label>
         <input
           type="password"
           value={form.currentPassword}
           onChange={handleChange('currentPassword')}
-          className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2.5 text-sm text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/30 transition-colors"
+          className="form-input tracking-widest"
           placeholder="Enter current password"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-1.5">
+        <label className="input-label">
           New Password
         </label>
         <input
           type="password"
           value={form.newPassword}
           onChange={handleChange('newPassword')}
-          className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2.5 text-sm text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/30 transition-colors"
+          className="form-input tracking-widest"
           placeholder="At least 6 characters"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-1.5">
+        <label className="input-label">
           Confirm New Password
         </label>
         <input
           type="password"
           value={form.confirmPassword}
           onChange={handleChange('confirmPassword')}
-          className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2.5 text-sm text-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/30 transition-colors"
+          className="form-input tracking-widest"
           placeholder="Re-enter new password"
         />
       </div>
@@ -107,11 +107,7 @@ const ChangePassword = () => {
       <button
         type="submit"
         disabled={saving}
-        className={`w-full py-2.5 px-4 rounded-lg text-sm font-medium text-white transition-all duration-200 ${
-          saving
-            ? 'bg-blue-600/50 cursor-not-allowed'
-            : 'bg-blue-600 hover:bg-blue-500 active:scale-[0.98] shadow-lg shadow-blue-600/20'
-        }`}
+        className={`btn-primary w-full py-3 mt-8 ${saving ? 'opacity-70 cursor-not-allowed' : ''}`}
       >
         {saving ? 'Updating...' : 'Update Password'}
       </button>
