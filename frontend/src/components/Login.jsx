@@ -173,6 +173,18 @@ const Login = ({ onLoginSuccess }) => {
                 placeholder="••••••••"
               />
             </div>
+
+            {mode === 'login' && (
+              <div className="flex justify-end !mt-2">
+                <button
+                  type="button"
+                  onClick={() => window.location.href = '/forgot-password'}
+                  className="text-xs text-blue-400 hover:text-blue-300 font-medium transition-colors"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+            )}
           </div>
 
           <button

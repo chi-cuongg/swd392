@@ -8,6 +8,8 @@ import Settings from './components/Settings';
 import AdminPanel from './components/AdminPanel';
 import AccountSettings from './components/AccountSettings';
 import ManageOrganizations from './components/ManageOrganizations';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 import axios from 'axios';
 import './index.css';
 import { API_BASE } from './config';
@@ -161,6 +163,15 @@ function App() {
   }, [isAuthenticated, activeOrganizationId]);
 
   if (!isAuthenticated) {
+    const path = window.location.pathname;
+    if (path === '/forgot-password') {
+      return <ForgotPassword onBack={() => window.location.href = '/'} />;
+    }
+    if (path === '/reset-password') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      return <ResetPassword token={token} onBack={() => window.location.href = '/'} />;
+    }
     return <Login onLoginSuccess={handleLoginSuccess} />;
   }
 

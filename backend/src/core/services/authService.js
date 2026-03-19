@@ -1,7 +1,9 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const prisma = require('../utils/prisma');
 const { normalizeRole } = require('../utils/roleUtils');
+const emailUtil = require('../../utils/email');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
@@ -260,6 +262,75 @@ class AuthService {
         });
 
         return { success: true, id: targetUserId };
+    }
+
+    /**
+     * Request a password reset email
+     */
+    async requestPasswordReset(email) {
+        if (!email) throw { status: 400, message: 'Email is required' };
+        
+        const normalizedEmail = String(email).trim().toLowerCase();
+        const user = await prisma.user.findFirst({ where: { email: normalizedEmail } });
+        
+        // Always return success even if user not found to prevent email enumeration
+        if (!user) return { success: true, message: 'If email exists, a reset link was sent.' };
+
+        // Generate token and expiry (1 hour)
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const tokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+        const expires = new Date(Date.now() + 60 * 60 * 1000);
+
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                resetToken: tokenHash,
+                resetTokenExpires: expires
+            }
+        });
+
+        // Send email (passing raw token)
+        await emailUtil.sendResetEmail(user.email, resetToken);
+        
+        return { success: true, message: 'If email exists, a reset link was sent.' };
+    }
+
+    /**
+     * Reset password using token
+     */
+    async resetPasswordWithToken(token, newPassword) {
+        if (!token || !newPassword) {
+            throw { status: 400, message: 'Token and newPassword are required' };
+        }
+        if (String(newPassword).length < 6) {
+            throw { status: 400, message: 'newPassword must be at least 6 characters' };
+        }
+
+        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+        
+        const user = await prisma.user.findFirst({
+            where: {
+                resetToken: tokenHash,
+                resetTokenExpires: { gt: new Date() }
+            }
+        });
+
+        if (!user) {
+            throw { status: 400, message: 'Token is invalid or has expired' };
+        }
+
+        const hashed = await bcrypt.hash(newPassword, 10);
+
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                password: hashed,
+                resetToken: null,
+                resetTokenExpires: null
+            }
+        });
+
+        return { success: true, message: 'Password has been reset' };
     }
 }
 
