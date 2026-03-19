@@ -268,6 +268,7 @@ const Dashboard = ({ activeOrganizationId, activeVariant }) => {
                 });
                 if (isMounted) {
                     setConfig(res.data);
+                    console.log('Fetched config:', res.data);
                 }
             } catch (err) {
                 console.error('Failed to fetch config:', err);

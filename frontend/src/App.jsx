@@ -94,7 +94,7 @@ function App() {
         });
         const variants = res.data || [];
         setAvailableVariants(variants);
-        if (variants.length > 0 && !variants.find(v => v.id === activeVariant)) {
+        if (variants.length > 0) {
           setActiveVariant(variants[0].id);
         }
       } catch (err) {
@@ -146,7 +146,7 @@ function App() {
         />
         {currentView === 'dashboard' && <Dashboard activeOrganizationId={activeOrganizationId} activeVariant={activeVariant} />}
         {isAdmin && currentView === 'devices' && <DeviceManager organizationId={activeOrganizationId} domain={activeVariant} />}
-        {isAdmin && currentView === 'settings' && <Settings organizationId={activeOrganizationId} domain={activeVariant} />}
+        {currentView === 'settings' && <Settings organizationId={activeOrganizationId} domain={activeVariant} />}
       </div>
     </SocketProvider>
   );

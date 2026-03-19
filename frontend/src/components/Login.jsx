@@ -7,7 +7,7 @@ const Login = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [slug, setSlug] = useState('spla'); // Default setup in bootstrap
+  const [slug, setSlug] = useState('home'); // Default setup in bootstrap
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -66,7 +66,7 @@ const Login = ({ onLoginSuccess }) => {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">
-                Organization Slug (Default: spla)
+                Organization Slug
               </label>
               <input
                 type="text"
@@ -74,7 +74,7 @@ const Login = ({ onLoginSuccess }) => {
                 value={slug}
                 onChange={(e) => setSlug(e.target.value)}
                 className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
-                placeholder="Ex: spla"
+                placeholder="Ex: home"
               />
             </div>
 
