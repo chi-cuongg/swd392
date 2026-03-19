@@ -64,11 +64,20 @@ function App() {
     
     const fetchBootstrap = async () => {
       try {
-        const orgRes = await axios.get(`${API_BASE}/config/organizations`);
-        const orgs = orgRes.data || [];
-        setOrganizations(orgs);
-        if (orgs.length > 0) {
-          setActiveOrganizationId(orgs[0].id);
+        if (isAdmin) {
+          const orgRes = await axios.get(`${API_BASE}/config/organizations`);
+          const orgs = orgRes.data || [];
+          setOrganizations(orgs);
+          if (orgs.length > 0) {
+            setActiveOrganizationId(orgs[0].id);
+          }
+        } else {
+          const orgRes = await axios.get(`${API_BASE}/config/my-org`);
+          const orgs = [orgRes.data] || [];
+          setOrganizations(orgs);
+          if (orgs.length > 0) {
+            setActiveOrganizationId(orgs[0].id);
+          }
         }
       } catch (err) {
         // Backend might not be running yet

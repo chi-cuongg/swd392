@@ -1,5 +1,8 @@
 const prisma = require('../utils/prisma');
+const jwt = require('jsonwebtoken');
 const { getMetricSchema } = require('../utils/metricSchema');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
 class ConfigService {
     /**
@@ -28,6 +31,22 @@ class ConfigService {
             orderBy: { name: 'asc' }
         });
         return organizations;
+    }
+
+    async getMyOrganization(token) {
+        try {
+            const decoded = jwt.verify(token, JWT_SECRET);
+            const organization = await prisma.organization.findUnique({ 
+                where: { id: decoded.organizationId },
+                select: { id: true, slug: true, name: true, description: true }
+            });
+            return organization;
+        } catch (error) {
+            throw {
+                status: 401,
+                message: 'Invalid or expired token'
+            };
+        }
     }
 
     /**
