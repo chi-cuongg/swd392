@@ -18,6 +18,7 @@ const AdminPanel = ({
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [userForm, setUserForm] = useState(DEFAULT_USER_FORM);
+  const [editingUser, setEditingUser] = useState(null);
 
   const fetchUsers = async () => {
     if (!activeOrganizationId) {
@@ -65,6 +66,36 @@ const AdminPanel = ({
     } catch (err) {
       console.error('Failed to add user', err);
       alert(err.response?.data?.error || 'Failed to add user');
+    }
+  };
+
+  const handleEditUser = (user) => {
+    setEditingUser(user);
+    setUserForm({
+      email: user.email,
+      password: '',
+      name: user.name || '',
+      role: user.role || 'ORG_USER'
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingUser(null);
+    setUserForm(DEFAULT_USER_FORM);
+  };
+
+  const handleUpdateUser = async () => {
+    if (!activeOrganizationId || !editingUser) return;
+    try {
+      await axios.put(`${API_BASE}/config/organizations/${activeOrganizationId}/users/${editingUser.id}`, {
+        name: userForm.name.trim() || undefined,
+        role: userForm.role
+      });
+      handleCancelEdit();
+      fetchUsers();
+    } catch (err) {
+      console.error('Failed to update user', err);
+      alert(err.response?.data?.error || 'Failed to update user');
     }
   };
 
@@ -126,8 +157,9 @@ const AdminPanel = ({
                 <input
                   type="email"
                   value={userForm.email}
+                  disabled={!!editingUser}
                   onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
-                  className="form-input"
+                  className={`form-input ${editingUser ? 'opacity-50 cursor-not-allowed' : ''}`}
                   placeholder="user@example.com"
                 />
             </div>
@@ -136,9 +168,10 @@ const AdminPanel = ({
                 <input
                   type="password"
                   value={userForm.password}
+                  disabled={!!editingUser}
                   onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
-                  className="form-input"
-                  placeholder="••••••"
+                  className={`form-input ${editingUser ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  placeholder={editingUser ? "Unchanged" : "••••••"}
                 />
             </div>
             <div>
@@ -162,13 +195,21 @@ const AdminPanel = ({
                     <option value="ORG_USER">USER</option>
                     <option value="SYSTEM_ADMIN">ADMIN</option>
                 </select>
-                <button
-                    onClick={handleAddUser}
-                    className="btn-primary"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg>
-                    Add
-                </button>
+                {editingUser ? (
+                  <>
+                    <button onClick={handleUpdateUser} className="btn-primary text-sm px-4">
+                        Update
+                    </button>
+                    <button onClick={handleCancelEdit} className="px-3 py-1.5 bg-slate-700/50 text-slate-300 border border-slate-600/50 hover:bg-slate-700 rounded-lg text-sm font-medium transition-colors">
+                        Cancel
+                    </button>
+                  </>
+                ) : (
+                    <button onClick={handleAddUser} className="btn-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" /></svg>
+                        Add
+                    </button>
+                )}
                 </div>
             </div>
         </div>
@@ -212,6 +253,12 @@ const AdminPanel = ({
                             </span>
                         </td>
                         <td className="p-4 text-right px-6 space-x-2">
+                          <button
+                            onClick={() => handleEditUser(user)}
+                            className="px-3 py-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 rounded-lg text-xs font-medium transition-colors"
+                          >
+                            Edit
+                          </button>
                           <button
                             onClick={() => handleAdminResetPassword(user.id)}
                             className="px-3 py-1.5 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 hover:bg-yellow-500/20 rounded-lg text-xs font-medium transition-colors"

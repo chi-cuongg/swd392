@@ -16,6 +16,7 @@ router.put('/organizations/:organizationId', adminMiddleware, configController.u
 router.delete('/organizations/:organizationId', adminMiddleware, configController.deleteOrganization);
 router.get('/organizations/:organizationId/users', adminMiddleware, configController.getOrganizationUsers);
 router.post('/organizations/:organizationId/users', adminMiddleware, configController.addUserToOrganization);
+router.put('/organizations/:organizationId/users/:userId', adminMiddleware, configController.updateUserInOrganization);
 router.delete('/organizations/:organizationId/users/:userId', adminMiddleware, configController.removeUserFromOrganization);
 
 module.exports = router;

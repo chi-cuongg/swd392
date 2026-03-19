@@ -345,6 +345,40 @@ class ConfigService {
     }
 
     /**
+     * Update user in an organization
+     */
+    async updateUserInOrganization(organizationId, userId, payload) {
+        const { name, role } = payload;
+
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user || user.organizationId !== organizationId) {
+            throw {
+                status: 404,
+                message: 'User not found'
+            };
+        }
+
+        const allowedRoles = new Set(['SYSTEM_ADMIN', 'ORG_USER', 'admin', 'user']);
+        if (role && !allowedRoles.has(role)) {
+            throw {
+                status: 400,
+                message: 'Invalid role value'
+            };
+        }
+
+        const updated = await prisma.user.update({
+            where: { id: userId },
+            data: {
+                name: name !== undefined ? name : user.name,
+                role: role || user.role
+            },
+            select: { id: true, email: true, name: true, role: true, organizationId: true }
+        });
+
+        return updated;
+    }
+
+    /**
      * Remove user from an organization
      */
     async removeUserFromOrganization(organizationId, userId) {

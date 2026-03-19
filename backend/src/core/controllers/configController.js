@@ -112,6 +112,22 @@ exports.addUserToOrganization = async(req, res) => {
     }
 };
 
+exports.updateUserInOrganization = async(req, res) => {
+    try {
+        const updatedUser = await configService.updateUserInOrganization(
+            req.params.organizationId,
+            req.params.userId,
+            req.body || {}
+        );
+        res.json(updatedUser);
+    } catch (error) {
+        console.error('Update user error:', error);
+        const status = error.status || 500;
+        const message = error.message || 'Failed to update user';
+        res.status(status).json({ error: message });
+    }
+};
+
 exports.removeUserFromOrganization = async(req, res) => {
     try {
         if (req.userId === req.params.userId) {
