@@ -80,3 +80,29 @@ exports.adminResetPassword = async(req, res) => {
         res.status(status).json({ error: message });
     }
 };
+
+exports.requestPasswordReset = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const result = await authService.requestPasswordReset(email);
+        res.json(result);
+    } catch (error) {
+        console.error('Request password reset error:', error);
+        const status = error.status || 500;
+        const message = error.message || 'Failed to request password reset';
+        res.status(status).json({ error: message });
+    }
+};
+
+exports.resetPasswordWithToken = async (req, res) => {
+    try {
+        const { token, newPassword } = req.body;
+        const result = await authService.resetPasswordWithToken(token, newPassword);
+        res.json(result);
+    } catch (error) {
+        console.error('Reset password with token error:', error);
+        const status = error.status || 500;
+        const message = error.message || 'Failed to reset password';
+        res.status(status).json({ error: message });
+    }
+};
