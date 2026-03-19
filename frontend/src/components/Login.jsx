@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { API_BASE } from '../config';
 
@@ -7,9 +7,37 @@ const Login = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [slug, setSlug] = useState('spla'); // Default setup in bootstrap
+  const [slug, setSlug] = useState('');
+  const [organizations, setOrganizations] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadOrganizations = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/auth/organizations`);
+        const list = Array.isArray(res.data) ? res.data : [];
+        if (!mounted) return;
+        setOrganizations(list);
+        if (list.length > 0) {
+          setSlug((prev) => prev || list[0].slug);
+        } else {
+          setSlug('home');
+        }
+      } catch {
+        if (!mounted) return;
+        setOrganizations([]);
+        setSlug('home');
+      }
+    };
+
+    loadOrganizations();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,10 +47,10 @@ const Login = ({ onLoginSuccess }) => {
     try {
       const endpoint = mode === 'register' ? 'register' : 'login';
       const payload = {
-        organizationSlug: slug,
-        email,
+        organizationSlug: slug.trim(),
+        email: email.trim().toLowerCase(),
         password,
-        ...(mode === 'register' && name ? { name } : {})
+        ...(mode === 'register' && name ? { name: name.trim() } : {})
       };
       const response = await axios.post(`${API_BASE}/auth/${endpoint}`, payload);
 
@@ -66,16 +94,31 @@ const Login = ({ onLoginSuccess }) => {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">
-                Organization Slug (Default: spla)
+                Organization
               </label>
-              <input
-                type="text"
-                required
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
-                className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
-                placeholder="Ex: spla"
-              />
+              {organizations.length > 0 ? (
+                <select
+                  required
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value)}
+                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                >
+                  {organizations.map((org) => (
+                    <option key={org.id} value={org.slug}>
+                      {org.name} ({org.slug})
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  required
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value)}
+                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  placeholder="Organization slug"
+                />
+              )}
             </div>
 
             {mode === 'register' && (

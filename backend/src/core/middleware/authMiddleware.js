@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { normalizeRole } = require('../utils/roleUtils');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
@@ -12,7 +13,7 @@ const authMiddleware = (req, res, next) => {
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
         req.userId = decoded.userId;
-        req.userRole = decoded.role;
+        req.userRole = normalizeRole(decoded.role);
         req.organizationId = decoded.organizationId;
         next();
     } catch (error) {

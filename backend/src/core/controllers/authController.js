@@ -31,6 +31,18 @@ exports.login = async(req, res) => {
     }
 };
 
+exports.getOrganizations = async(req, res) => {
+    try {
+        const organizations = await authService.getPublicOrganizations();
+        res.json(organizations);
+    } catch (error) {
+        console.error('Get public organizations error:', error);
+        const status = error.status || 500;
+        const message = error.message || 'Failed to fetch organizations';
+        res.status(status).json({ error: message });
+    }
+};
+
 exports.me = async(req, res) => {
     try {
         const user = await authService.getCurrentUser(req.userId);
@@ -39,6 +51,32 @@ exports.me = async(req, res) => {
         console.error('Get user error:', error);
         const status = error.status || 500;
         const message = error.message || 'Failed to get user info';
+        res.status(status).json({ error: message });
+    }
+};
+
+exports.resetPassword = async(req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const result = await authService.resetPassword(req.userId, currentPassword, newPassword);
+        res.json(result);
+    } catch (error) {
+        console.error('Reset password error:', error);
+        const status = error.status || 500;
+        const message = error.message || 'Failed to reset password';
+        res.status(status).json({ error: message });
+    }
+};
+
+exports.adminResetPassword = async(req, res) => {
+    try {
+        const { newPassword } = req.body;
+        const result = await authService.adminResetPassword(req.params.id, newPassword);
+        res.json(result);
+    } catch (error) {
+        console.error('Admin reset password error:', error);
+        const status = error.status || 500;
+        const message = error.message || 'Failed to reset password';
         res.status(status).json({ error: message });
     }
 };

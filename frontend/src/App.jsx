@@ -5,6 +5,7 @@ import Dashboard from './components/Dashboard';
 import Login from './components/Login';
 import DeviceManager from './components/DeviceManager';
 import Settings from './components/Settings';
+import AdminPanel from './components/AdminPanel';
 import axios from 'axios';
 import './index.css';
 import { API_BASE } from './config';
@@ -57,31 +58,61 @@ function App() {
     setCurrentView('dashboard');
   };
 
-  const isAdmin = currentUser?.role === 'admin';
+  const isSystemAdmin = currentUser?.role === 'SYSTEM_ADMIN' || currentUser?.role === 'admin';
+
+  const handleOrganizationChange = (nextOrgId) => {
+    if (!isSystemAdmin) return;
+    setActiveOrganizationId(nextOrgId);
+  };
 
   useEffect(() => {
-    if (!isAdmin && currentView !== 'dashboard') {
+    if (!isSystemAdmin && currentView === 'devices') {
       setCurrentView('dashboard');
     }
-  }, [isAdmin, currentView]);
+    if (!isSystemAdmin && currentView === 'admin') {
+      setCurrentView('dashboard');
+    }
+  }, [isSystemAdmin, currentView]);
+
+  const refreshOrganizations = async (preferredOrganizationId) => {
+    const orgRes = await axios.get(`${API_BASE}/config/organizations`);
+    const orgs = orgRes.data || [];
+    setOrganizations(orgs);
+    if (orgs.length === 0) {
+      setActiveOrganizationId('');
+      return;
+    }
+
+    if (isSystemAdmin) {
+      const preferred = preferredOrganizationId && orgs.find((org) => org.id === preferredOrganizationId);
+      const keepCurrent = activeOrganizationId && orgs.find((org) => org.id === activeOrganizationId);
+      const chosen = preferred?.id || keepCurrent?.id || orgs[0].id;
+      setActiveOrganizationId(chosen);
+      return;
+    }
+
+    const ownOrg = orgs.find((org) => org.id === currentUser?.organizationId);
+    setActiveOrganizationId(ownOrg ? ownOrg.id : orgs[0].id);
+  };
 
   useEffect(() => {
     if (!isAuthenticated) return;
     
     const fetchBootstrap = async () => {
       try {
-        const orgRes = await axios.get(`${API_BASE}/config/organizations`);
-        const orgs = orgRes.data || [];
-        setOrganizations(orgs);
-        if (orgs.length > 0) {
-          setActiveOrganizationId(orgs[0].id);
-        }
+        await refreshOrganizations();
       } catch (err) {
         // Backend might not be running yet
       }
     };
     fetchBootstrap();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isSystemAdmin, currentUser?.organizationId]);
+
+  useEffect(() => {
+    if (!isSystemAdmin && currentUser?.organizationId && activeOrganizationId !== currentUser.organizationId) {
+      setActiveOrganizationId(currentUser.organizationId);
+    }
+  }, [isSystemAdmin, currentUser?.organizationId, activeOrganizationId]);
 
   useEffect(() => {
     if (!isAuthenticated || !activeOrganizationId) return;
@@ -134,19 +165,29 @@ function App() {
         <Sidebar
           organizations={organizations}
           activeOrganizationId={activeOrganizationId}
-          onOrganizationChange={setActiveOrganizationId}
+          onOrganizationChange={handleOrganizationChange}
           variants={availableVariants}
           activeVariant={activeVariant}
           onVariantChange={setActiveVariant}
           stats={stats}
           currentView={currentView}
           onViewChange={setCurrentView}
-          isAdmin={isAdmin}
+          isSystemAdmin={isSystemAdmin}
+          canSwitchOrganization={isSystemAdmin}
           onLogout={handleLogout}
         />
         {currentView === 'dashboard' && <Dashboard activeOrganizationId={activeOrganizationId} activeVariant={activeVariant} />}
-        {isAdmin && currentView === 'devices' && <DeviceManager organizationId={activeOrganizationId} domain={activeVariant} />}
-        {isAdmin && currentView === 'settings' && <Settings organizationId={activeOrganizationId} domain={activeVariant} />}
+        {isSystemAdmin && currentView === 'devices' && <DeviceManager organizationId={activeOrganizationId} domain={activeVariant} />}
+        {isSystemAdmin && currentView === 'admin' && (
+          <AdminPanel
+            organizations={organizations}
+            activeOrganizationId={activeOrganizationId}
+            onOrganizationChange={handleOrganizationChange}
+            onOrganizationsChanged={refreshOrganizations}
+            currentUser={currentUser}
+          />
+        )}
+        {currentView === 'settings' && <Settings organizationId={activeOrganizationId} domain={activeVariant} />}
       </div>
     </SocketProvider>
   );

@@ -1,6 +1,7 @@
 {
     "name": "SMP - Farm Ingest Router",
-    "nodes": [{
+    "nodes": [
+        {
             "parameters": {
                 "httpMethod": "POST",
                 "path": "farm",
@@ -36,7 +37,16 @@
                 "sendBody": true,
                 "specifyBody": "json",
                 "jsonBody": "={{ JSON.stringify($json) }}",
-                "options": {}
+                "options": {},
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "x-ingest-key",
+                            "value": "spla_ingest_dev_key"
+                        }
+                    ]
+                }
             },
             "id": "5a5a5a5a-0005-0005-0005-000000000003",
             "name": "POST to Core",
@@ -51,20 +61,24 @@
     "connections": {
         "Webhook": {
             "main": [
-                [{
-                    "node": "Normalize Payload",
-                    "type": "main",
-                    "index": 0
-                }]
+                [
+                    {
+                        "node": "Normalize Payload",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
             ]
         },
         "Normalize Payload": {
             "main": [
-                [{
-                    "node": "POST to Core",
-                    "type": "main",
-                    "index": 0
-                }]
+                [
+                    {
+                        "node": "POST to Core",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
             ]
         }
     },

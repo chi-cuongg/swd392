@@ -1,5 +1,8 @@
 const prisma = require('../utils/prisma');
 const { getMetricSchema } = require('../utils/metricSchema');
+const { isSystemAdmin } = require('../utils/roleUtils');
+const { getDomain } = require('../../domains/registry');
+const bcrypt = require('bcryptjs');
 
 class ConfigService {
     /**
@@ -22,8 +25,10 @@ class ConfigService {
     /**
      * Get all organizations
      */
-    async getOrganizations() {
+    async getOrganizations(organizationId, userRole) {
+        const where = isSystemAdmin(userRole) ? {} : { id: organizationId };
         const organizations = await prisma.organization.findMany({
+            where,
             select: { id: true, slug: true, name: true, description: true },
             orderBy: { name: 'asc' }
         });
@@ -113,6 +118,239 @@ class ConfigService {
             widgets: JSON.parse(dashboard.widgets),
             thresholds
         };
+    }
+
+    /**
+     * Create a new organization and bootstrap domain defaults
+     */
+    async createOrganization(payload) {
+        const {
+            id,
+            slug,
+            name,
+            description,
+            domain,
+            label,
+            icon,
+            color
+        } = payload;
+
+        if (!slug || !name || !domain) {
+            throw {
+                status: 400,
+                message: 'slug, name and domain are required'
+            };
+        }
+
+        const variant = getDomain(domain);
+        if (!variant) {
+            throw {
+                status: 404,
+                message: 'Domain not found'
+            };
+        }
+
+        const orgId = id || `org_${slug}`;
+
+        const existing = await prisma.organization.findFirst({
+            where: {
+                OR: [{ id: orgId }, { slug }]
+            }
+        });
+
+        if (existing) {
+            throw {
+                status: 409,
+                message: 'Organization already exists'
+            };
+        }
+
+        const created = await prisma.organization.create({
+            data: {
+                id: orgId,
+                slug,
+                name,
+                description: description || null,
+                dashboards: {
+                    create: {
+                        domain,
+                        label: label || variant.label,
+                        description: variant.description,
+                        icon: icon || variant.icon,
+                        color: color || variant.color,
+                        widgets: JSON.stringify(variant.widgets)
+                    }
+                }
+            },
+            select: { id: true, slug: true, name: true, description: true }
+        });
+
+        const uniqueWidgetsByKey = new Map();
+        for (const widget of variant.widgets) {
+            if (!uniqueWidgetsByKey.has(widget.key)) {
+                uniqueWidgetsByKey.set(widget.key, widget);
+            }
+        }
+
+        for (const widget of uniqueWidgetsByKey.values()) {
+            const threshold = variant.thresholds[widget.key] || {};
+            const metric = await prisma.metric.create({
+                data: {
+                    organizationId: created.id,
+                    domain,
+                    key: widget.key,
+                    label: widget.label,
+                    unit: widget.unit || null,
+                    dataType: threshold.values ? 'enum' : 'number',
+                    min: typeof widget.min === 'number' ? widget.min : null,
+                    max: typeof widget.max === 'number' ? widget.max : null,
+                    widgetType: widget.type,
+                    icon: widget.icon || null
+                }
+            });
+
+            await prisma.threshold.create({
+                data: {
+                    metricId: metric.id,
+                    warn: typeof threshold.warn === 'number' ? threshold.warn : null,
+                    critical: typeof threshold.critical === 'number' ? threshold.critical : null,
+                    invertWarning: Boolean(threshold.invertWarning),
+                    valueMapping: threshold.values ? JSON.stringify(threshold.values) : null
+                }
+            });
+        }
+
+        return created;
+    }
+
+    /**
+     * Update organization metadata
+     */
+    async updateOrganization(organizationId, payload) {
+        const organization = await prisma.organization.findUnique({ where: { id: organizationId } });
+        if (!organization) {
+            throw {
+                status: 404,
+                message: 'Organization not found'
+            };
+        }
+
+        const nextSlug = typeof payload.slug === 'string' ? payload.slug.trim() : organization.slug;
+        const nextName = typeof payload.name === 'string' ? payload.name.trim() : organization.name;
+        const nextDescription = typeof payload.description === 'string' ? payload.description.trim() : organization.description;
+
+        if (!nextSlug || !nextName) {
+            throw {
+                status: 400,
+                message: 'slug and name are required'
+            };
+        }
+
+        const slugExists = await prisma.organization.findFirst({
+            where: {
+                slug: nextSlug,
+                NOT: { id: organizationId }
+            },
+            select: { id: true }
+        });
+
+        if (slugExists) {
+            throw {
+                status: 409,
+                message: 'Organization slug already exists'
+            };
+        }
+
+        return prisma.organization.update({
+            where: { id: organizationId },
+            data: {
+                slug: nextSlug,
+                name: nextName,
+                description: nextDescription || null
+            },
+            select: { id: true, slug: true, name: true, description: true }
+        });
+    }
+
+    /**
+     * Get users in an organization
+     */
+    async getOrganizationUsers(organizationId) {
+        const users = await prisma.user.findMany({
+            where: { organizationId },
+            select: { id: true, email: true, name: true, role: true, createdAt: true },
+            orderBy: { createdAt: 'asc' }
+        });
+
+        return users;
+    }
+
+    /**
+     * Add user to an organization
+     */
+    async addUserToOrganization(organizationId, payload) {
+        const { email, password, name, role } = payload;
+
+        if (!email || !password) {
+            throw {
+                status: 400,
+                message: 'email and password are required'
+            };
+        }
+
+        const organization = await prisma.organization.findUnique({ where: { id: organizationId } });
+        if (!organization) {
+            throw {
+                status: 404,
+                message: 'Organization not found'
+            };
+        }
+
+        const allowedRoles = new Set(['SYSTEM_ADMIN', 'ORG_USER', 'admin', 'user']);
+        if (role && !allowedRoles.has(role)) {
+            throw {
+                status: 400,
+                message: 'Invalid role value'
+            };
+        }
+
+        const existing = await prisma.user.findFirst({ where: { organizationId, email } });
+        if (existing) {
+            throw {
+                status: 409,
+                message: 'Email already exists in this organization'
+            };
+        }
+
+        const hashed = await bcrypt.hash(password, 10);
+        const user = await prisma.user.create({
+            data: {
+                organizationId,
+                email,
+                password: hashed,
+                name: name || email.split('@')[0],
+                role: role || 'ORG_USER'
+            },
+            select: { id: true, email: true, name: true, role: true, organizationId: true }
+        });
+
+        return user;
+    }
+
+    /**
+     * Remove user from an organization
+     */
+    async removeUserFromOrganization(organizationId, userId) {
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user || user.organizationId !== organizationId) {
+            throw {
+                status: 404,
+                message: 'User not found'
+            };
+        }
+
+        await prisma.user.delete({ where: { id: userId } });
+        return { success: true, id: userId };
     }
 }
 

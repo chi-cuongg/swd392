@@ -1,4 +1,5 @@
 const alertService = require('../services/alertService');
+const { isSystemAdmin } = require('../utils/roleUtils');
 
 /**
  * Alert Controller - handles HTTP request/response
@@ -7,7 +8,10 @@ const alertService = require('../services/alertService');
 
 exports.getAlerts = async(req, res) => {
     try {
-        const { organizationId, domain, severity, unresolvedOnly, limit } = req.query;
+        const { domain, severity, unresolvedOnly, limit } = req.query;
+        const organizationId = isSystemAdmin(req.userRole)
+            ? (req.query.organizationId || req.organizationId)
+            : req.organizationId;
         const alerts = await alertService.getAlerts(
             organizationId,
             domain,
@@ -26,7 +30,10 @@ exports.getAlerts = async(req, res) => {
 
 exports.resolveAlert = async(req, res) => {
     try {
-        const alert = await alertService.resolveAlert(req.params.id);
+        const organizationId = isSystemAdmin(req.userRole)
+            ? (req.query.organizationId || req.organizationId)
+            : req.organizationId;
+        const alert = await alertService.resolveAlert(req.params.id, organizationId);
         res.json(alert);
     } catch (error) {
         console.error('Resolve alert error:', error);

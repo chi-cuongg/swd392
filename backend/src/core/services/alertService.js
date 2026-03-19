@@ -29,7 +29,21 @@ class AlertService {
     /**
      * Resolve an alert by ID
      */
-    async resolveAlert(alertId) {
+    async resolveAlert(alertId, organizationId) {
+        const existing = await prisma.alert.findFirst({
+            where: {
+                id: alertId,
+                organizationId
+            }
+        });
+
+        if (!existing) {
+            throw {
+                status: 404,
+                message: 'Alert not found'
+            };
+        }
+
         const alert = await prisma.alert.update({
             where: { id: alertId },
             data: { resolvedAt: new Date() }

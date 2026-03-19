@@ -1,6 +1,19 @@
 const prisma = require('../utils/prisma');
 const { DOMAIN_METRIC_KEYS, normalizeMetricKey } = require('../utils/metricSchema');
 
+const AUTO_CREATE_DEVICE_ON_INGEST = process.env.AUTO_CREATE_DEVICE_ON_INGEST === 'true';
+
+function parseDeviceConfig(rawConfig) {
+    if (!rawConfig) return {};
+    if (typeof rawConfig === 'object') return rawConfig;
+    try {
+        const parsed = JSON.parse(rawConfig);
+        return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (error) {
+        return {};
+    }
+}
+
 class IngestService {
     /**
      * Evaluate severity based on metric value and threshold
@@ -66,12 +79,10 @@ class IngestService {
     }
 
     /**
-     * Find organization by ID or slug
+     * Find organization by ID
      */
-    async findOrganization(organizationId, organizationSlug) {
-        const organization = organizationId
-            ? await prisma.organization.findUnique({ where: { id: organizationId } })
-            : await prisma.organization.findUnique({ where: { slug: organizationSlug } });
+    async findOrganization(organizationId) {
+        const organization = await prisma.organization.findUnique({ where: { id: organizationId } });
 
         if (!organization) {
             throw {
@@ -84,29 +95,48 @@ class IngestService {
     }
 
     /**
-     * Upsert device and update its status
+     * Ensure device exists and belongs to organization/domain, then mark online
      */
-    async upsertDevice(deviceId, organizationId, domain, deviceName) {
-        const device = await prisma.device.upsert({
+    async getRegisteredDevice(deviceId, organizationId, domain, normalizedMetrics) {
+        const device = await prisma.device.findUnique({ where: { id: deviceId } });
+
+        if (!device) {
+            if (AUTO_CREATE_DEVICE_ON_INGEST) {
+                return prisma.device.create({
+                    data: {
+                        id: deviceId,
+                        organizationId,
+                        name: `Device ${deviceId}`,
+                        type: 'Generic',
+                        domain,
+                        status: 'online',
+                        config: JSON.stringify({
+                            metricKeys: Object.keys(normalizedMetrics || {})
+                        })
+                    }
+                });
+            }
+
+            throw {
+                status: 404,
+                message: 'Device is not registered. Please create device before ingesting data.'
+            };
+        }
+
+        if (device.organizationId !== organizationId || device.domain !== domain) {
+            throw {
+                status: 409,
+                message: 'Device organization/domain mismatch'
+            };
+        }
+
+        return prisma.device.update({
             where: { id: deviceId },
-            update: {
+            data: {
                 status: 'online',
-                domain,
-                organizationId,
-                name: deviceName || undefined,
                 updatedAt: new Date()
-            },
-            create: {
-                id: deviceId,
-                organizationId,
-                name: deviceName || `Device ${deviceId}`,
-                type: 'Generic',
-                domain,
-                status: 'online'
             }
         });
-
-        return device;
     }
 
     /**
@@ -179,24 +209,41 @@ class IngestService {
     /**
      * Ingest data from a device
      */
-    async ingestData(organizationId, organizationSlug, deviceId, deviceName, domain, metrics, status, message) {
+    async ingestData(organizationId, deviceId, domain, metrics, status, message) {
         // Validate inputs
-        if (!deviceId || !domain || !metrics || typeof metrics !== 'object') {
+        if (!organizationId || !deviceId || !domain || !metrics || typeof metrics !== 'object') {
             throw {
                 status: 400,
-                message: 'deviceId, domain and metrics are required'
+                message: 'organizationId, deviceId, domain and metrics are required'
             };
         }
 
         // Find organization
-        const organization = await this.findOrganization(organizationId, organizationSlug);
+        const organization = await this.findOrganization(organizationId);
         const orgId = organization.id;
 
         // Normalize and validate metrics
         const normalizedMetrics = this.normalizeMetrics(domain, metrics);
 
-        // Upsert device
-        const device = await this.upsertDevice(deviceId, orgId, domain, deviceName);
+        // Require registered device and update heartbeat
+        const device = await this.getRegisteredDevice(deviceId, orgId, domain, normalizedMetrics);
+
+        const deviceConfig = parseDeviceConfig(device.config);
+        const mappedMetricKeys = Array.isArray(deviceConfig.metricKeys) ? deviceConfig.metricKeys : [];
+        if (mappedMetricKeys.length > 0) {
+            const invalidForDevice = Object.keys(normalizedMetrics).filter((key) => !mappedMetricKeys.includes(key));
+            if (invalidForDevice.length > 0) {
+                throw {
+                    status: 400,
+                    message: 'Metric key(s) are not mapped to this device',
+                    details: {
+                        deviceId,
+                        invalidMetricKeys: invalidForDevice,
+                        mappedMetricKeys
+                    }
+                };
+            }
+        }
 
         // Process all metrics
         let overallStatus = status || 'normal';

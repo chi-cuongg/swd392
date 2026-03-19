@@ -1,4 +1,5 @@
 const logService = require('../services/logService');
+const { isSystemAdmin } = require('../utils/roleUtils');
 
 /**
  * Log Controller - handles HTTP request/response
@@ -7,7 +8,10 @@ const logService = require('../services/logService');
 
 exports.getLogs = async(req, res) => {
     try {
-        const { deviceId, organizationId, domain, level, limit } = req.query;
+        const { deviceId, domain, level, limit } = req.query;
+        const organizationId = isSystemAdmin(req.userRole)
+            ? (req.query.organizationId || req.organizationId)
+            : req.organizationId;
         const logs = await logService.getLogs(deviceId, organizationId, domain, level, limit);
         res.json(logs);
     } catch (error) {
@@ -20,7 +24,9 @@ exports.getLogs = async(req, res) => {
 
 exports.getStats = async(req, res) => {
     try {
-        const { organizationId } = req.query;
+        const organizationId = isSystemAdmin(req.userRole)
+            ? (req.query.organizationId || req.organizationId)
+            : req.organizationId;
         const stats = await logService.getStats(organizationId);
         res.json(stats);
     } catch (error) {

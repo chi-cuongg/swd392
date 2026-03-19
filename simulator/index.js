@@ -4,6 +4,7 @@ const axios = require('axios');
 
 const N8N_BASE = process.env.N8N_URL || 'http://localhost:5678/webhook';
 const CORE_API = process.env.CORE_URL || 'http://localhost:3000/api/ingest';
+const INGEST_API_KEY = process.env.INGEST_API_KEY || 'spla_ingest_dev_key';
 
 const mode = process.argv[2] || 'all';
 const ROUTE_MODE = process.argv[3] || 'n8n';
@@ -202,6 +203,10 @@ const sendData = async(variantKey) => {
                     status,
                     message,
                     timestamp: Date.now()
+                }, {
+                    headers: {
+                        'x-ingest-key': INGEST_API_KEY
+                    }
                 });
                 console.log(`[${variant.domain.toUpperCase()}]${stepText} -> core fallback ${status}`);
             } catch (fallbackError) {
@@ -221,7 +226,11 @@ const sendData = async(variantKey) => {
         };
 
         try {
-            await axios.post(CORE_API, payload);
+            await axios.post(CORE_API, payload, {
+                headers: {
+                    'x-ingest-key': INGEST_API_KEY
+                }
+            });
             console.log(`[${variant.domain.toUpperCase()}]${stepText} -> core ${status}`);
         } catch (err) {
             console.error(`[${variant.domain}]${stepText} core error: ${err.message}`);

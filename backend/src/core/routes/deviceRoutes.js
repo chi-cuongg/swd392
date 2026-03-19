@@ -6,6 +6,9 @@ const adminMiddleware = require('../middleware/adminMiddleware');
 
 router.use(authMiddleware, adminMiddleware);
 
+// Create device
+router.post('/', deviceController.createDevice);
+
 // Get all devices
 router.get('/', deviceController.getAllDevices);
 
@@ -14,5 +17,8 @@ router.get('/:id', deviceController.getDeviceById);
 
 // Update device
 router.put('/:id', deviceController.updateDevice);
+
+// Delete device
+router.delete('/:id', deviceController.deleteDevice);
 
 module.exports = router;

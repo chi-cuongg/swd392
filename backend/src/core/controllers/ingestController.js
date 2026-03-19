@@ -7,14 +7,13 @@ const ingestService = require('../services/ingestService');
 
 exports.ingestData = async(req, res) => {
     try {
-        const { organizationId, organizationSlug, deviceId, deviceName, domain, metrics, status, message } = req.body;
+        const { deviceId, domain, metrics, status, message } = req.body;
+        const organizationId = req.organizationId;
 
         // Call service to handle business logic
         const result = await ingestService.ingestData(
             organizationId,
-            organizationSlug,
             deviceId,
-            deviceName,
             domain,
             metrics,
             status,

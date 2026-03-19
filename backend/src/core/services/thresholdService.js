@@ -37,9 +37,9 @@ class ThresholdService {
     /**
      * Update or create threshold for a metric
      */
-    async updateThreshold(metricId, warn, critical, invertWarning = false, valueMapping) {
+    async updateThreshold(metricId, organizationId, warn, critical, invertWarning = false, valueMapping) {
         const metric = await prisma.metric.findUnique({ where: { id: metricId } });
-        if (!metric) {
+        if (!metric || metric.organizationId !== organizationId) {
             throw {
                 status: 404,
                 message: 'Metric not found'

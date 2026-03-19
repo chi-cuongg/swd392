@@ -7,6 +7,7 @@ const app = express();
 const PORT = Number(process.env.SIM_UI_PORT || 4060);
 const N8N_BASE = process.env.N8N_URL || 'http://localhost:5678/webhook';
 const CORE_API = process.env.CORE_URL || 'http://localhost:3000/api/ingest';
+const INGEST_API_KEY = process.env.INGEST_API_KEY || 'spla_ingest_dev_key';
 const CORE_BASE = process.env.CORE_BASE || CORE_API.replace(/\/api\/ingest$/, '');
 
 const VARIANTS = {
@@ -135,7 +136,9 @@ let autoConfig = {
     variant: 'factory',
     routeMode: 'n8n',
     dataMode: 'scenario',
-    intervalMs: 2500
+    intervalMs: 2500,
+    organizationIdOverride: '',
+    deviceIdPrefix: ''
 };
 
 const pushLog = (level, message, meta = {}) => {
@@ -265,17 +268,34 @@ const splitMetricsByDevices = (variant, metrics) => {
         .filter((item) => Object.keys(item.metrics).length > 0);
 };
 
-const sendVariant = async ({ variantKey, routeMode, dataMode, metricsOverride, forceStatus, forceMessage, consumeScenario = true }) => {
+const buildDeviceId = (deviceId, prefix) => {
+    const normalizedPrefix = String(prefix || '').trim();
+    if (!normalizedPrefix) return deviceId;
+    return `${normalizedPrefix}_${deviceId}`;
+};
+
+const sendVariant = async ({
+    variantKey,
+    routeMode,
+    dataMode,
+    metricsOverride,
+    forceStatus,
+    forceMessage,
+    organizationIdOverride,
+    deviceIdPrefix,
+    consumeScenario = true
+}) => {
     const variant = VARIANTS[variantKey];
     if (!variant) {
         throw new Error(`Unknown variant: ${variantKey}`);
     }
 
+    const targetOrganizationId = String(organizationIdOverride || '').trim() || variant.organizationId;
     const payloadData = buildVariantMetrics(variantKey, dataMode, metricsOverride, consumeScenario);
     const baseTimestamp = Date.now();
     const payloads = splitMetricsByDevices(variant, payloadData.metrics).map((chunk) => ({
-        organizationId: variant.organizationId,
-        deviceId: chunk.deviceId,
+        organizationId: targetOrganizationId,
+        deviceId: buildDeviceId(chunk.deviceId, deviceIdPrefix),
         deviceName: chunk.deviceName,
         domain: variant.domain,
         metrics: chunk.metrics,
@@ -283,7 +303,8 @@ const sendVariant = async ({ variantKey, routeMode, dataMode, metricsOverride, f
         sequence: ++sequenceCounter,
         meta: {
             source: 'simulator-ui',
-            variant: variantKey
+            variant: variantKey,
+            organizationIdOverride: targetOrganizationId
         }
     }));
 
@@ -317,7 +338,11 @@ const sendVariant = async ({ variantKey, routeMode, dataMode, metricsOverride, f
             ...(forceMessage ? { message: forceMessage } : {})
         };
 
-        const response = await axios.post(CORE_API, directPayload);
+        const response = await axios.post(CORE_API, directPayload, {
+            headers: {
+                'x-ingest-key': INGEST_API_KEY
+            }
+        });
         const computedStatus = response && response.data ? response.data.status : undefined;
         responses.push({ deviceId: payload.deviceId, status: response.status, computedStatus });
         pushLog('info', `${variantKey}/${payload.deviceId} -> core (${stepText})`, {
@@ -337,7 +362,17 @@ const sendVariant = async ({ variantKey, routeMode, dataMode, metricsOverride, f
     };
 };
 
-const sendOnce = async ({ variant, routeMode, dataMode, metricsOverride, forceStatus, forceMessage, consumeScenario = true }) => {
+const sendOnce = async ({
+    variant,
+    routeMode,
+    dataMode,
+    metricsOverride,
+    forceStatus,
+    forceMessage,
+    organizationIdOverride,
+    deviceIdPrefix,
+    consumeScenario = true
+}) => {
     if (variant === 'all') {
         const results = [];
         for (const key of Object.keys(VARIANTS)) {
@@ -348,6 +383,8 @@ const sendOnce = async ({ variant, routeMode, dataMode, metricsOverride, forceSt
                 metricsOverride: null,
                 forceStatus,
                 forceMessage,
+                organizationIdOverride,
+                deviceIdPrefix,
                 consumeScenario
             });
             results.push({ variant: key, ...result });
@@ -362,13 +399,15 @@ const sendOnce = async ({ variant, routeMode, dataMode, metricsOverride, forceSt
         metricsOverride,
         forceStatus,
         forceMessage,
+        organizationIdOverride,
+        deviceIdPrefix,
         consumeScenario
     });
 
     return { mode: 'single', variant, result };
 };
 
-const startAuto = ({ variant, routeMode, dataMode, intervalMs }) => {
+const startAuto = ({ variant, routeMode, dataMode, intervalMs, organizationIdOverride, deviceIdPrefix }) => {
     if (timer) {
         clearInterval(timer);
     }
@@ -377,7 +416,9 @@ const startAuto = ({ variant, routeMode, dataMode, intervalMs }) => {
         variant,
         routeMode,
         dataMode,
-        intervalMs
+        intervalMs,
+        organizationIdOverride: String(organizationIdOverride || '').trim(),
+        deviceIdPrefix: String(deviceIdPrefix || '').trim()
     };
 
     timer = setInterval(() => {
@@ -387,7 +428,9 @@ const startAuto = ({ variant, routeMode, dataMode, intervalMs }) => {
             dataMode: autoConfig.dataMode,
             metricsOverride: null,
             forceStatus: null,
-            forceMessage: null
+            forceMessage: null,
+            organizationIdOverride: autoConfig.organizationIdOverride,
+            deviceIdPrefix: autoConfig.deviceIdPrefix
         }).catch((err) => {
             pushLog('error', 'Autoplay tick failed', { error: err.message });
         });
@@ -412,7 +455,12 @@ app.get('/api/variants', (req, res) => {
     const variants = Object.keys(VARIANTS).map((key) => ({
         key,
         domain: VARIANTS[key].domain,
-        organizationId: VARIANTS[key].organizationId
+        organizationId: VARIANTS[key].organizationId,
+        devices: (VARIANTS[key].devices || []).map((device) => ({
+            id: device.id,
+            name: device.name,
+            metricKeys: Array.isArray(device.metricKeys) ? device.metricKeys : []
+        }))
     }));
     res.json({ variants });
 });
@@ -442,8 +490,10 @@ app.post('/api/send', async (req, res) => {
         dataMode = 'scenario',
         metrics = null,
         forceStatus = null,
-            forceMessage = null,
-            consumeScenario = true
+        forceMessage = null,
+        organizationIdOverride = '',
+        deviceIdPrefix = '',
+        consumeScenario = true
     } = req.body || {};
 
     if (routeMode !== 'n8n' && routeMode !== 'direct') {
@@ -464,6 +514,8 @@ app.post('/api/send', async (req, res) => {
             metricsOverride: metrics,
             forceStatus,
             forceMessage,
+            organizationIdOverride,
+            deviceIdPrefix,
             consumeScenario: Boolean(consumeScenario)
         });
         return res.json({ ok: true, result });
@@ -478,7 +530,9 @@ app.post('/api/start', (req, res) => {
         variant = 'factory',
         routeMode = 'n8n',
         dataMode = 'scenario',
-        intervalMs = 2500
+        intervalMs = 2500,
+        organizationIdOverride = '',
+        deviceIdPrefix = ''
     } = req.body || {};
 
     if (variant !== 'all' && !VARIANTS[variant]) {
@@ -495,7 +549,9 @@ app.post('/api/start', (req, res) => {
         variant,
         routeMode,
         dataMode,
-        intervalMs: Number(intervalMs) || 2500
+        intervalMs: Number(intervalMs) || 2500,
+        organizationIdOverride,
+        deviceIdPrefix
     });
 
     return res.json({ ok: true, running: true, autoConfig });
@@ -514,15 +570,6 @@ app.post('/api/reset', (req, res) => {
     resetScenario(variant);
     pushLog('info', 'Scenario pointer reset', { variant });
     return res.json({ ok: true, variant, scenarioState });
-});
-
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-app.listen(PORT, () => {
-    console.log(`Simulator UI running at http://localhost:${PORT}`);
-    pushLog('info', 'Simulator UI booted', { port: PORT, n8n: N8N_BASE, core: CORE_API });
 });
 
 app.get('/api/metric-schema', async(req, res) => {
@@ -562,4 +609,13 @@ app.get('/api/metric-schema', async(req, res) => {
         const variant = req.query.variant || 'factory';
         return res.json(getLocalMetricSchema(variant));
     }
+});
+
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.listen(PORT, () => {
+    console.log(`Simulator UI running at http://localhost:${PORT}`);
+    pushLog('info', 'Simulator UI booted', { port: PORT, n8n: N8N_BASE, core: CORE_API });
 });

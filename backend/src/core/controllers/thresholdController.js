@@ -1,4 +1,5 @@
 const thresholdService = require('../services/thresholdService');
+const { isSystemAdmin } = require('../utils/roleUtils');
 
 /**
  * Threshold Controller - handles HTTP request/response
@@ -7,7 +8,10 @@ const thresholdService = require('../services/thresholdService');
 
 exports.getThresholds = async(req, res) => {
     try {
-        const { organizationId, domain } = req.query;
+        const { domain } = req.query;
+        const organizationId = isSystemAdmin(req.userRole)
+            ? (req.query.organizationId || req.organizationId)
+            : req.organizationId;
         const thresholds = await thresholdService.getThresholds(organizationId, domain);
         res.json(thresholds);
     } catch (error) {
@@ -22,8 +26,12 @@ exports.updateThreshold = async(req, res) => {
     try {
         const { metricId } = req.params;
         const { warn, critical, invertWarning, valueMapping } = req.body;
+        const organizationId = isSystemAdmin(req.userRole)
+            ? (req.query.organizationId || req.organizationId)
+            : req.organizationId;
         const threshold = await thresholdService.updateThreshold(
             metricId,
+            organizationId,
             warn,
             critical,
             invertWarning,
