@@ -3,10 +3,10 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const prisma = require('./utils/prisma');
-const { ensureDefaultData } = require('./utils/bootstrap');
+const prisma = require('./core/utils/prisma');
+const { ensureDefaultData } = require('./core/utils/bootstrap');
 
-dotenv.config();
+dotenv.config({override: true});
 
 const app = express();
 app.use(cors());
@@ -27,13 +27,13 @@ app.use((req, res, next) => {
 });
 
 // Routes
-const ingestRoutes = require('./routes/ingestRoutes');
-const deviceRoutes = require('./routes/deviceRoutes');
-const authRoutes = require('./routes/authRoutes');
-const configRoutes = require('./routes/configRoutes');
-const logRoutes = require('./routes/logRoutes');
-const thresholdRoutes = require('./routes/thresholdRoutes');
-const alertRoutes = require('./routes/alertRoutes');
+const ingestRoutes = require('./core/routes/ingestRoutes');
+const deviceRoutes = require('./core/routes/deviceRoutes');
+const authRoutes = require('./core/routes/authRoutes');
+const configRoutes = require('./core/routes/configRoutes');
+const logRoutes = require('./core/routes/logRoutes');
+const thresholdRoutes = require('./core/routes/thresholdRoutes');
+const alertRoutes = require('./core/routes/alertRoutes');
 
 app.use('/api/ingest', ingestRoutes);
 app.use('/api/devices', deviceRoutes);
