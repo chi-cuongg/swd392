@@ -1,192 +1,143 @@
-# Smart Monitoring Platform (SPLA Based)
+# 🌐 SPLA Platform - Multi-domain IoT Monitoring
 
-Nen tang giam sat IoT da tenant dua tren kien truc Software Product Line (SPLA), tich hop n8n workflow engine va realtime qua Socket.IO.
+**SPLA Platform** là một hệ thống giám sát IoT (Internet of Things) đa miền (Multi-domain) đa khách hàng (Multi-tenant) thời gian thực. Hệ thống được thiết kế theo kiến trúc Software Product Line (SPLA) để thu thập, chuẩn hóa, lưu trữ và cảnh báo dữ liệu thống kê từ nhiều lĩnh vực khác nhau như Nhà thông minh (Smart Home), Nhà máy (Factory), Bệnh viện (Hospital), Nông trại (Farm) và Giao thông (Traffic).
 
-## 📁 Cấu trúc dự án
+## 🏢 1. Kiến trúc hệ thống
 
+Dự án áp dụng kiến trúc phân tán hiện đại, bao gồm 4 thành phần (module) cốt lõi:
+
+1. **Simulator (Bộ mô phỏng dữ liệu thiết bị)**
+   - Đóng vai trò là các thiết bị IoT (Sensors) đang hoạt động.
+   - Hỗ trợ các kịch bản thời gian thực (baseline bình thường, warning cảnh báo, critical nguy hiểm).
+   - Giao diện UI control panel trực quan giúp khởi chạy theo chủ đích.
+2. **Data Ingestion Router (n8n)**
+   - Sử dụng workflow engine `n8n` chạy trên Docker.
+   - Nhận Webhook từ Simulator, xử lý làm sạch dữ liệu (Normalize Payload) và chuyển tiếp dữ liệu đến Backend qua chuẩn REST.
+3. **Core Backend (Node.js & Express)**
+   - Xử lý logic nghiệp vụ trung tâm, đánh giá ngưỡng cảnh báo (Thresholds).
+   - Lưu trữ dữ liệu và sinh ra Alert (cảnh báo).
+   - Sử dụng Socket.IO để phát sóng (broadcast) thời gian thực số liệu lên giao diện.
+4. **Vite React Frontend**
+   - Ứng dụng web hiển thị Dashboard giám sát thời gian thực theo hướng Multi-domain.
+   - Biểu diễn thông số bằng các biểu đồ tương tác (Line Chart, Gauge) và các bảng cảnh báo.
+   - Giao diện quản lý thiết bị, ngưỡng cảnh báo và xác thực người dùng.
+
+### 👋 Luồng dữ liệu (SPLA Architecture)
+```text
+Simulator/Device 
+  -> n8n Webhook 
+  -> Data Normalization (n8n Workflow)
+  -> Core Backend Ingest API
+  -> Threshold Evaluation (Backend)
+  -> Persist SensorData + Alert (SQLite)
+  -> Socket.IO Broadcast (to specific Organization/Domain rooms)
+  -> Frontend Dashboard Render + Realtime Updates
 ```
+
+### 🌟 5 Biến thể hỗ trợ (Domains)
+- 🏠 **Smart Home** — Nhiệt độ, Khói, Cửa, Chuyển động.
+- 🏥 **Hospital** — Nhịp tim, SpO2, Huyết áp.
+- 🏭 **Factory** — Nhiệt độ máy, Rọc, Áp suất.
+- 🚗 **Traffic** — Mật độ xe, Tai nạn, Tắc đường.
+- 🌾 **Farm** — Độ ẩm đất, Ánh sáng, pH.
+
+## 🛠 2. Công nghệ sử dụng (Tech Stack)
+
+- **Frontend:** React.js 19, Vite, TailwindCSS 4, Chart.js.
+- **Backend:** Node.js, Express.js.
+- **Real-time:** Socket.IO.
+- **Cơ sở dữ liệu:** SQLite thông qua ORM Prisma (dễ dàng scale lên PostgreSQL).
+- **Workflow & Integration:** n8n (Docker container).
+- **Simulator**: Node.js + Axios (Kèm UI Server).
+
+## 📁 3. Cấu trúc dự án
+
+```text
 swd392/
-├── backend/          # Core Platform (Node.js + Express + Socket.io)
-│   ├── prisma/       # Database schema (SQLite)
+├── backend/          # Core Platform (Node.js + Express + Socket.IO + Prisma)
+│   ├── prisma/       # Database schema (SQLite) & Seeds
+│   ├── src/          # Source code backend (Controllers, Routes, Services)
+├── frontend/         # Dashboard Web App (React 19 + Vite + TailwindCSS 4)
 │   ├── src/
-│   │   ├── controllers/   # Business logic handlers
-│   │   ├── routes/        # API endpoints
-│   │   ├── utils/         # Prisma client, Auth middleware
-│   │   └── index.js       # Server entry point
-│   └── .env
-├── frontend/         # Dashboard (React + Vite + TailwindCSS)
-│   └── src/
-│       ├── components/    # Widgets (Gauge, Chart, Status, etc.)
-│       ├── context/       # Socket.io Context
-│       └── App.jsx
-├── n8n/              # Workflow Engine configs
+│   │   ├── components/  # Các thành phần giao diện, Dashboard Web Widgets
+│   │   ├── context/     # Socket.IO Context
+├── n8n/              # Workflow Engine (Cấu hình Docker & JSON Workflows)
 │   ├── docker-compose.yml
-│   ├── workflow-smart-home.json
-│   └── workflow-hospital.json
-├── simulator/        # IoT Data Simulator
-│   └── index.js
-└── README.md
+│   └── workflow-*.json
+└── simulator/        # Trình giả lập luồng dữ liệu IoT theo kịch bản
+    ├── index.js      # CLI Simulator
+    ├── uiServer.js   # Giao diện điều khiển Simulator UI
+    └── scenarios/    # Các kịch bản tạo dữ liệu giả lập (JSON)
 ```
 
-## SPLA Data Model
+## 🚀 4. Hướng dẫn chạy dự án (Run Local)
 
-He thong su dung cac entity:
-- Organization
-- User
-- Device
-- Metric
-- Threshold
-- SensorData
-- Alert
-- DashboardConfig
-
-## Run Local
-
-### Quick Fullstack Start
-
-1. Backend:
+### 4.1. Core Backend
 ```bash
 cd backend
-npm run setup
+npm install
+npm run prisma:migrate -- --name init_db
 npm run dev
+# -> Chạy tại: http://localhost:3000
 ```
+> **Lưu ý:** Backend sẽ tự động *seed* dữ liệu mặc định hệ thống nếu Database trống.  
+> Tài khoản Admin mặc định: `admin@spla.local` / `admin123`.
 
-2. n8n:
+### 4.2. Khởi động n8n (Workflow Engine Router)
 ```bash
 cd n8n
 docker compose up -d
+# -> n8n UI tại: http://localhost:5678
 ```
-Import 5 workflow files and publish them in n8n UI.
+> **Lưu ý:** Cần phải truy cập n8n UI, tạo Use Account nội bộ, sau đó Import các file `workflow-*.json` vào và bật (Publish/Activate) chúng.
 
-3. Frontend:
+### 4.3. Dashboard Frontend
 ```bash
 cd frontend
 npm install
 npm run dev
+# -> Dashboard Web tại: http://localhost:5173
 ```
+> **Tuỳ chọn:** Bạn có thể copy `frontend/.env.example` thành `frontend/.env.local` để tuỳ chỉnh biến môi trường (Ví dụ: `VITE_API_BASE`, `VITE_SOCKET_URL`) nếu chạy trên port khác.
 
-4. Simulator:
-```bash
-cd simulator
-npm install
-npm start
-```
-
-### 1. Backend (Core Platform)
-```bash
-cd backend
-npm install
-npm run prisma:migrate -- --name spla_init
-npm run dev
-# Server: http://localhost:3000
-```
-
-Ghi chu:
-- Backend tu dong seed du lieu mac dinh cho 5 domain neu database trong.
-- Tai khoan admin mac dinh: `admin@spla.local` / `admin123` (co the doi qua `.env`).
-
-### 2. Frontend (Dashboard)
-```bash
-cd frontend
-npm install
-npm run dev
-# → Dashboard: http://localhost:5173
-```
-
-Optional frontend env:
-- Copy `frontend/.env.example` to `.env.local` and adjust:
-  - `VITE_API_BASE`
-  - `VITE_SOCKET_URL`
-
-### 3. Simulator (Fake IoT Data)
+### 4.4. Trình giả lập dữ liệu IoT (Simulator)
 ```bash
 cd simulator
 npm install
 
-# Open simulator control UI
+# Mở giao diện Control Panel trực quan (Khuyến nghị dùng lúc Thuyết trình)
 npm run ui
-# -> http://localhost:4060
+# -> Control UI tại: http://localhost:4060
 
-# Deterministic demo mode (recommended)
-npm run demo
+# --- CÁC LỆNH CLI NẾU MUỐN CHẠY BẰNG TERMINAL ---
 
-# Tat ca variants qua n8n (scenario mode)
+# Chạy tự động (Deterministic Demo mode) cho tất cả các domain qua n8n
 node index.js all n8n 3000 scenario
 
-# 1 variant qua n8n (scenario mode)
+# Chạy cho 1 domain cụ thể (vd: Hospital)
 node index.js hospital n8n 3000 scenario
 
-# Fallback direct vao backend (scenario mode)
+# Chạy gửi trực tiếp Backend (bỏ qua n8n router)
 node index.js home direct 3000 scenario
-
-# Random mode (soak test)
-node index.js all n8n 3000 random
 ```
 
-Ghi chu demo:
-- Scenario mode dung du lieu co kich ban, lap lai giong nhau qua moi lan chay.
-- Muc tieu de thuyet trinh luong normal -> warning -> critical -> recovered ro rang.
-- Neu muon thao tac bang giao dien thay vi terminal, mo Simulator UI va bam:
-  - Send once / Next step
-  - Start autoplay / Stop autoplay
-  - Reset selected scenario / Reset all scenarios
+## 📡 5. Tham chiếu REST APIs & WebSockets
 
-### 4. n8n (Workflow Engine)
-```bash
-cd n8n
-docker-compose up -d
-# n8n UI: http://localhost:5678
-# Import workflow-*.json vao n8n
-```
-
-## API Endpoints
-
-| Method | Endpoint | Mô tả |
+### 🔌 Cốt lõi REST API Endpoints
+| HTTP Method | API Endpoint | Ý nghĩa |
 |--------|----------|--------|
-| POST | `/api/ingest` | Nhan du lieu sensor (organization scoped) |
-| GET | `/api/config/organizations` | Danh sach organization |
-| GET | `/api/config/variants?organizationId=...` | Danh sach dashboard/domain theo organization |
-| GET | `/api/config/variants/:id?organizationId=...` | Dashboard config + thresholds |
-| GET | `/api/devices?organizationId=...` | Danh sach devices theo organization |
-| GET | `/api/logs?organizationId=...` | SensorData timeline |
-| GET | `/api/logs/stats?organizationId=...` | Thong ke tong hop |
-| GET | `/api/thresholds?organizationId=...` | Danh sach threshold theo metrics |
-| PUT | `/api/thresholds/:metricId` | Cap nhat threshold metric |
-| GET | `/api/alerts?organizationId=...` | Danh sach alerts |
-| PUT | `/api/alerts/:id/resolve` | Resolve alert |
-| POST | `/api/auth/register` | Dang ky user theo organization |
-| POST | `/api/auth/login` | Dang nhap theo organization |
-| GET | `/api/auth/me` | User profile + organization |
+| `POST` | `/api/ingest` | Khai báo Dữ liệu Cảm biến cho Backend. |
+| `GET` | `/api/config/*` | Cấu hình Tổ chức, Variants Dashboard. |
+| `GET` | `/api/devices` | Danh sách thiết bị (Devices). |
+| `GET` | `/api/logs` | Timeline luồng dữ liệu thu thập (SensorData). |
+| `GET/PUT` | `/api/thresholds` | Đọc hoặc Mức cập nhật Ngưỡng Cảnh cáo. |
+| `GET/PUT` | `/api/alerts` | Danh sách các Cảnh báo vi phạm (Alerts) và Xử lý. |
+| `POST` | `/api/auth/*` | Các luồng Đăng nhập, Đăng ký, Lấy Profile JWT. |
 
-## WebSocket Events
-
-| Event | Direction | Mô tả |
+### ⚡ Socket.IO Events
+| Event Name | Chiều tương tác | Mô tả |
 |-------|-----------|--------|
-| `device_update` | Server -> Client | Sensor update realtime |
-| `alert_created` | Server -> Client | Alert moi duoc tao |
-| `join_scope` | Client -> Server | Join room theo organization/domain |
-| `leave_scope` | Client -> Server | Leave room theo organization/domain |
-
-## SPLA Architecture
-
-```
-Simulator/Device -> n8n workflow -> Backend ingest
-  -> Threshold evaluation in backend
-  -> SensorData + Alert persisted in SQLite
-  -> Socket.IO push to org/domain rooms
-  -> Frontend dashboard render from DashboardConfig + realtime stream
-```
-
-**5 Biến thể hỗ trợ:**
-- 🏠 **Smart Home** — Nhiệt độ, Khói, Cửa, Chuyển động
-- 🏥 **Hospital** — Nhịp tim, SpO2, Huyết áp  
-- 🏭 **Factory** — Nhiệt độ máy, Rung, Áp suất
-- 🚗 **Traffic** — Mật độ xe, Tai nạn, Tắc đường
-- 🌾 **Farm** — Độ ẩm đất, Ánh sáng, pH
-
-## Tech Stack
-
-- **Backend**: Node.js, Express, Socket.io, Prisma, SQLite
-- **Frontend**: React, Vite, TailwindCSS, Chart.js
-- **Workflow**: n8n (Docker)
-- **Simulator**: Node.js + Axios
+| `device_update` | Backend -> Front | Phát sóng Realtime chỉ số Sensor tới Frontend. |
+| `alert_created` | Backend -> Front | Bắn sự kiện khi có Cảnh báo vượt Ngưỡng phát sinh. |
+| `join_scope` | Front -> Backend | Yêu cầu tham gia Room Socket theo tên Domain/Org. |
+| `leave_scope` | Front -> Backend | Rời khỏi Room Socket khi chuyển Domain. |
